@@ -1,6 +1,3 @@
-<<<<<<< HEAD
-# Guide
-=======
 # Guide
 
 The guide walks through Sonata from installing it to shipping a standalone program. Read it
@@ -18,4 +15,3 @@ in order the first time; afterwards each page works as a reference for its topic
 | [CLI reference](cli.md) | Every `sn` command and option. |
 
 For the details of a single function, see the [module API reference](../api/module/index.md).
->>>>>>> 10875da (continue)

@@ -1,38 +1,16 @@
 # <code><a href="../sonata">sonata</a>::cli</code> (namespace)
 
-<<<<<<< HEAD
-The <code><a href="../sonata">sonata</a>::cli</code> namespace contains classes for interacting with the `sn` command.
-=======
 The `sonata::cli` namespace contains the classes behind the `sn` command. They live in the
 `cli/` folder of the source tree (`cli/cli.hpp`, `cli/command.hpp`) and are part of the `sn`
 executable, not of the installed library.
 
 The commands themselves (`init`, `pkg`, `run`, `build`) are in `cli/commands/`, in the
 `sonata::commands` namespace.
->>>>>>> 10875da (continue)
 
 ## Classes & Structs
 
 | Class | Description |
 |---|---|
-<<<<<<< HEAD
-| [`CLI`](../classes/cli.md) | Represents a new CLI command e.g. `sn`. |
-| [`Command`](../classes/cli_command.md) | Represents a command e.g. `init` or `build`. |
-| [`Argument`](../classes/cli_argument.md) | Represents an argument for a [Command](../classes/cli_command.md), like `--help`. |
-
-!!! note "help_argument"
-
-    When making a new command, do not manually declare the --help argument.
-    Instead, pass `sonata::cli::help_argument` in the arguments of the command.
-    
-    ```cpp
-    inline const Argument help_argument{
-        .name = "--help",
-        .aliases = {"-h"},
-        .description = "Shows help information about the command or subcommand"
-    };
-    ```
-=======
 | [`CLI`](../classes/cli.md) | The `sn` command: dispatches to commands and prints help. |
 | [`Command`](../classes/cli_command.md) | A command or subcommand, e.g. `init` or `pkg add`. |
 | [`Argument`](../classes/cli_argument.md) | An argument of a [`Command`](../classes/cli_command.md), like `--help`, shown in its help. |
@@ -110,4 +88,3 @@ Then:
 The command now appears in `sn --help`, gets `sn hello --help`, and takes part in "did you
 mean" suggestions. Return `0` on success and `1` on failure, and print errors to `stderr` as
 `error: <message>`.
->>>>>>> 10875da (continue)

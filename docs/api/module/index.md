@@ -1,11 +1,4 @@
 ---
-<<<<<<< HEAD
-hide:
-  - toc
-search:
-  exclude: true
----
-=======
 search:
   boost: 2
 ---
@@ -76,4 +69,3 @@ Libraries differ in how they report failure, and each page says which applies:
 - **Return `nil, message`**: failures that depend on the outside world return `nil` and a
   message; only misuse (bad argument types) raises. Used by `net`, `term` streams, and parts of
   `process` and `crypto`.
->>>>>>> 10875da (continue)

@@ -5,16 +5,6 @@ search:
 
 # `sonata` (namespace)
 
-<<<<<<< HEAD
-The `sonata` namespace is the root name that holds all the other namespaces and classes from Sonata.
-
-## Classes
-
-| Class | Description |
-|---|---|
-| [`Project`](../classes/project.md) | Represents an initialized and structurally valid Sonata project. |
-| [`Runtime`](../classes/runtime.md) | A manager layer used to make your life easier when working with all Sonata systems at once. |
-=======
 The root namespace. It holds the classes for projects, packages and assets, and every other
 namespace.
 
@@ -43,16 +33,11 @@ namespace.
 | [`selectLibraries`](#selectlibraries) | `selection.hpp` | Works out which built-in libraries a program may use. |
 | [`collectAssets`](../classes/pocket.md#collectassets) | `pocket.hpp` | Expands `build.assets` into a list of files. |
 | [`makeCliGitBackend`, `makeLibGit2Backend`, `defaultGitBackends`](../classes/package_manager.md#git-backends) | `package.hpp` | Create Git backends. |
->>>>>>> 10875da (continue)
 
 ## Child Namespaces
 
 | Namespace | Description |
 |---|---|
-<<<<<<< HEAD
-| [`sonata::cli`](cli.md) | Contains classes for interacting with the `sn` command. |
-| [`sonata::luau`](luau.md) | Contains Luau-related members like VM instances, compiling, etc. |
-=======
 | [`sonata::luau`](luau.md) | The VM, the compiler, data files, environments and the module system. |
 | [`sonata::lib`](lib.md) | Built-in libraries and their registry. |
 | [`sonata::sched`](sched.md) | The task scheduler. |
@@ -146,4 +131,3 @@ for (const auto& warning : selection.warnings)
 if (!selection.all)
     loader.restrictLibraries(selection.libraries, selection.hint);
 ```
->>>>>>> 10875da (continue)

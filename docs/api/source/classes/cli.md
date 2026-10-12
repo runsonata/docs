@@ -1,19 +1,12 @@
 # <code><a href="../../namespaces/sonata">sonata</a>::<a href="../../namespaces/cli">cli</a>::CLI</code> (Class)
-<<<<<<< HEAD
-=======
 
->>>>>>> 10875da (continue)
 A barebones class representing the CLI command, `sn`.
 
 !!! warning
 
     This class and/or its properties were meant to be used
     only once, while defining the `sn` command.
-<<<<<<< HEAD
-    
-=======
 
->>>>>>> 10875da (continue)
     It is **not recommended** to create a new CLI object if
     there already is one, which might lead to conflict.
 
@@ -26,15 +19,6 @@ public:
 };
 ```
 
-<<<<<<< HEAD
-## Methods
-
-### `int run(int argc, char** argv)`
-Runs the command, which loops through all the registered sub-commands
-and executes the entry function for that subcommand.
-
-Prints the root help message if no subcommand or argument is supplied.
-=======
 `cli/main.cpp` is all it takes to make `sn`:
 
 ```cpp
@@ -71,4 +55,3 @@ Commands receive `argc`/`argv` with their own name already removed. A top-level 
 Help and errors are colored when written to a terminal. `NO_COLOR` disables colors,
 `FORCE_COLOR` forces them, and `TERM=dumb` disables them. On Windows, virtual terminal
 processing is enabled for the console.
->>>>>>> 10875da (continue)

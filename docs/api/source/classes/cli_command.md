@@ -1,15 +1,10 @@
 # <code><a href="../../namespaces/sonata">sonata</a>::<a href="../../namespaces/cli">cli</a>::Command</code> (Struct)
 
-<<<<<<< HEAD
-A struct that stores information about a command (inside a [CLI](cli.md) object, like `init` or `pkg`) which gets read by
-the [CLI](cli.md) while running the command, or printing its help message.
-=======
 A struct that stores information about a command (inside a [CLI](cli.md) object, like `init` or
 `pkg`) which gets read by the [CLI](cli.md) while running the command, or printing its help
 message.
 
 `#include "command.hpp"` (in `cli/`)
->>>>>>> 10875da (continue)
 
 ## Definition
 
@@ -25,22 +20,6 @@ struct Command {
 };
 ```
 
-<<<<<<< HEAD
-### Members
-
-## `std::string name`
-The command's name/subcommand.
-
-This string is what is supplied after `sn`, like `sn init`.
-
-## `std::string description`
-A brief explanation of what the command does.
-
-Used while printing the command's help message.
-
-## `std::vector<Argument> args`
-nigga
-=======
 ## Members
 
 ### `name`
@@ -126,4 +105,3 @@ static const cli::Command command{
     .children = {}
 };
 ```
->>>>>>> 10875da (continue)

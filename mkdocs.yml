@@ -1,13 +1,8 @@
 site_name: Sonata Docs
 site_description: Docs for Sonata, an all-in-one Luau toolkit
 site_url: https://sonata.5418.org/docs/
-<<<<<<< HEAD
-repo_url: https://github.com/Sonata-CLI/sonata
-repo_name: Sonata-CLI/sonata
-=======
 repo_url: https://github.com/runsonata/sonata
 repo_name: runsonata/sonata
->>>>>>> 10875da (continue)
 copyright: Copyright &copy; 2026 - Sonata by Loopy5418
 
 theme:
@@ -59,48 +54,20 @@ extra_css:
 extra:
     social:
         - icon: fontawesome/brands/github
-<<<<<<< HEAD
-          link: https://github.com/Sonata-CLI
-=======
           link: https://github.com/runsonata
->>>>>>> 10875da (continue)
         
         - icon: fontawesome/brands/discord
           link: https://discord.gg/kGVWCdVHvW
 
 markdown_extensions:
     - admonition
-<<<<<<< HEAD
-=======
     - tables
     - toc:
         permalink: true
->>>>>>> 10875da (continue)
     - pymdownx.details
     - pymdownx.superfences
     - pymdownx.highlight
     - pymdownx.inlinehilite
-<<<<<<< HEAD
-    - attr_list
-
-nav:
-    - Home: index.md
-    - Guide: guide/index.md
-    - API:
-        - Overview: api/index.md
-        - Source:
-            - api/source/index.md
-            - Namespaces:
-                - sonata: api/source/namespaces/sonata.md
-                - cli: api/source/namespaces/cli.md
-                - util: api/source/namespaces/util.md
-            - Classes:
-                - cli::CLI: api/source/classes/cli.md
-                - cli::Command: api/source/classes/cli_command.md
-                - cli::Argument: api/source/classes/cli_argument.md
-        - Module:
-            - api/module/index.md
-=======
     - pymdownx.tabbed:
         alternate_style: true
     - attr_list
@@ -169,4 +136,3 @@ nav:
                 - luau::ModuleLoader: api/source/classes/luau_moduleloader.md
                 - luau::ModuleSource: api/source/classes/luau_modulesource.md
                 - sched::Scheduler: api/source/classes/sched_scheduler.md
->>>>>>> 10875da (continue)

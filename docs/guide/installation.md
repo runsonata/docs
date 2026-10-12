@@ -11,7 +11,7 @@ Sonata runs on Linux, macOS and Windows, on x64 and arm64.
 ## From a release
 
 Prebuilt archives are attached to the
-[GitHub releases](https://github.com/Sonata-CLI/sonata/releases), one per platform
+[GitHub releases](https://github.com/runsonata/sonata/releases), one per platform
 (`sonata-<version>-<system>-<arch>.tar.gz`, or `.zip` on Windows). Each archive has this layout:
 
 ```
@@ -56,7 +56,7 @@ brew install cmake openssl
 Clone the repository with its submodules (Luau and doctest):
 
 ```sh
-git clone --recursive https://github.com/Sonata-CLI/sonata.git
+git clone --recursive https://github.com/runsonata/sonata.git
 cd sonata
 ```
 

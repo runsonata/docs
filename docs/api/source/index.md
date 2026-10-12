@@ -1,25 +1,10 @@
 ---
 hide:
   - toc
-<<<<<<< HEAD
-search:
-  exclude: true
-=======
->>>>>>> 10875da (continue)
 ---
 
 # C++ API Reference
 
-<<<<<<< HEAD
-The C++ API reference documents the public interface provided by the toolkit.
-
-This section covers the C++ source code used to integrate, configure, and interact
-with the toolkit.
-
-!!! note
-
-    This documentation describes the **C++ API**, not the Luau language API. For reference about stuff like the built-in modules, please [go to the modules API reference](../module/index.md).
-=======
 Sonata is a C++20 library (`sonata`) with two small programs on top: the CLI (`sn`) and the
 runtime (`snrt`). This section documents the library's public headers. Use it to embed Sonata
 in your own program, to add a built-in library, or to work on Sonata itself.
@@ -153,4 +138,3 @@ if (auto error = code.compileError()) {
 
 - [Writing a built-in library](writing-a-library.md): add a `@sonata/<name>` module in C++.
 - [`sonata::cli`](namespaces/cli.md#adding-a-command): add an `sn` command.
->>>>>>> 10875da (continue)

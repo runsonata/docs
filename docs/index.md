@@ -51,5 +51,5 @@ end
 
 ## Getting help
 
-- Source code and issues: [github.com/Sonata-CLI/sonata](https://github.com/Sonata-CLI/sonata)
+- Source code and issues: [github.com/runsonata/sonata](https://github.com/runsonata/sonata)
 - Community: [Discord](https://discord.gg/kGVWCdVHvW)
