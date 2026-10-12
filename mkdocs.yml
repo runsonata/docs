@@ -1,8 +1,13 @@
 site_name: Sonata Docs
 site_description: Docs for Sonata, an all-in-one Luau toolkit
 site_url: https://sonata.5418.org/docs/
+<<<<<<< HEAD
 repo_url: https://github.com/Sonata-CLI/sonata
 repo_name: Sonata-CLI/sonata
+=======
+repo_url: https://github.com/runsonata/sonata
+repo_name: runsonata/sonata
+>>>>>>> 10875da (continue)
 copyright: Copyright &copy; 2026 - Sonata by Loopy5418
 
 theme:
@@ -54,17 +59,28 @@ extra_css:
 extra:
     social:
         - icon: fontawesome/brands/github
+<<<<<<< HEAD
           link: https://github.com/Sonata-CLI
+=======
+          link: https://github.com/runsonata
+>>>>>>> 10875da (continue)
         
         - icon: fontawesome/brands/discord
           link: https://discord.gg/kGVWCdVHvW
 
 markdown_extensions:
     - admonition
+<<<<<<< HEAD
+=======
+    - tables
+    - toc:
+        permalink: true
+>>>>>>> 10875da (continue)
     - pymdownx.details
     - pymdownx.superfences
     - pymdownx.highlight
     - pymdownx.inlinehilite
+<<<<<<< HEAD
     - attr_list
 
 nav:
@@ -84,3 +100,73 @@ nav:
                 - cli::Argument: api/source/classes/cli_argument.md
         - Module:
             - api/module/index.md
+=======
+    - pymdownx.tabbed:
+        alternate_style: true
+    - attr_list
+    - md_in_html
+
+nav:
+    - Home: index.md
+    - Guide:
+        - guide/index.md
+        - Installation: guide/installation.md
+        - Your first project: guide/first-project.md
+        - The project manifest: guide/manifest.md
+        - Modules and require: guide/modules.md
+        - Packages: guide/packages.md
+        - Building executables: guide/building.md
+        - Tasks and concurrency: guide/tasks.md
+        - CLI reference: guide/cli.md
+    - API:
+        - Overview: api/index.md
+        - Module:
+            - api/module/index.md
+            - Globals: api/module/globals.md
+            - "@sonata/compress": api/module/compress.md
+            - "@sonata/crypto": api/module/crypto.md
+            - "@sonata/datetime": api/module/datetime.md
+            - "@sonata/fs": api/module/fs.md
+            - "@sonata/json": api/module/json.md
+            - "@sonata/net": api/module/net.md
+            - "@sonata/path": api/module/path.md
+            - "@sonata/pocket": api/module/pocket.md
+            - "@sonata/process": api/module/process.md
+            - "@sonata/regex": api/module/regex.md
+            - "@sonata/serde": api/module/serde.md
+            - "@sonata/sonata": api/module/sonata.md
+            - "@sonata/sys": api/module/sys.md
+            - "@sonata/task": api/module/task.md
+            - "@sonata/term": api/module/term.md
+        - Source:
+            - api/source/index.md
+            - Writing a built-in library: api/source/writing-a-library.md
+            - Namespaces:
+                - sonata: api/source/namespaces/sonata.md
+                - sonata::bundle: api/source/namespaces/bundle.md
+                - sonata::cli: api/source/namespaces/cli.md
+                - sonata::info: api/source/namespaces/info.md
+                - sonata::lib: api/source/namespaces/lib.md
+                - sonata::luau: api/source/namespaces/luau.md
+                - sonata::os: api/source/namespaces/os.md
+                - sonata::runtime: api/source/namespaces/runtime.md
+                - sonata::sched: api/source/namespaces/sched.md
+            - Classes:
+                - Project: api/source/classes/project.md
+                - PackageManager: api/source/classes/package_manager.md
+                - Pocket: api/source/classes/pocket.md
+                - cli::CLI: api/source/classes/cli.md
+                - cli::Command: api/source/classes/cli_command.md
+                - cli::Argument: api/source/classes/cli_argument.md
+                - lib::LibraryRegistry: api/source/classes/lib_registry.md
+                - luau::Bytecode: api/source/classes/luau_bytecode.md
+                - luau::Compiler: api/source/classes/luau_compiler.md
+                - luau::VM: api/source/classes/luau_vm.md
+                - luau::DataFile: api/source/classes/luau_datafile.md
+                - luau::DataValue: api/source/classes/luau_datavalue.md
+                - luau::Environment: api/source/classes/luau_environment.md
+                - luau::Global: api/source/classes/luau_global.md
+                - luau::ModuleLoader: api/source/classes/luau_moduleloader.md
+                - luau::ModuleSource: api/source/classes/luau_modulesource.md
+                - sched::Scheduler: api/source/classes/sched_scheduler.md
+>>>>>>> 10875da (continue)
