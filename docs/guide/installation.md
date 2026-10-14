@@ -8,6 +8,24 @@ Sonata ships as two executables:
 
 Sonata runs on Linux, macOS and Windows, on x64 and arm64.
 
+# From the installation scripts (recommended)
+Sonata offers installation scripts to automate the entire installation process into one command.
+
+On Linux and MacOS:
+```sh
+curl -fsSL https://sonata.5418.org/install.sh | bash
+```
+
+or, if you dont have cUrl, use wget:
+
+```
+wget -qO- https://sonata.5418.org/install.sh | bash
+```
+
+On Windows, in PowerShell:
+```ps
+irm https://sonata.5418.org/install.ps1 | iex
+```
 ## From a release
 
 Prebuilt archives are attached to the
