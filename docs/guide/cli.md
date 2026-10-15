@@ -27,7 +27,7 @@ Help is handled for every command before it runs: `-h` or `--help` anywhere in t
 ## `sn init` {#sn-init}
 
 ```
-sn init [path] [--validate]
+sn init [path] [options]
 ```
 
 Creates a project in `path` (default: the current directory), creating the folder if needed:
@@ -44,7 +44,51 @@ A `main.luau` in a folder that isn't a project yet is overwritten without asking
 
 | Option | Description |
 |---|---|
-| `--validate` | Don't create anything. Check that the current directory is a valid project, and print its root and manifest. |
+| `--validate` | Don't create anything. Check that `path` (default: the current directory) is a valid project, and print its root and manifest. Can't be combined with `--lsp` or `--lsp-only`. |
+| `--lsp` | Also set up the [Luau Language Server](#sn-init-lsp) for the new project. |
+| `--lsp-only` | Only write the Luau Language Server files, in an existing project. `main.luau` and the manifest are left alone, and nothing is asked. |
+| `--no-vscode` | With `--lsp` or `--lsp-only`: don't write `.vscode/settings.json`. |
+
+```sh
+sn init
+sn init my-project --lsp
+sn init --lsp-only
+sn init --lsp-only --no-vscode
+sn init my-project --validate
+```
+
+### Luau Language Server {#sn-init-lsp}
+
+`--lsp` and `--lsp-only` set a project up for [luau-lsp](https://github.com/JohnnyMorganz/luau-lsp),
+the Luau Language Server, so the editor knows the types of the built-in libraries, the
+globals and the installed packages. They write:
+
+| File | Contents |
+|---|---|
+| `.sonata/types/libs/<name>.luau` | The API of each built-in library, with its documentation, so `require("@sonata/<name>")` is typed. |
+| `.sonata/types/globals.d.luau` | The globals Sonata adds: [`args`](../api/module/globals.md#args) and [`sonata`](../api/module/globals.md#sonata). |
+| `.luaurc` | Aliases: `sonata` points to `.sonata/types/libs`, and each package in `.sonata/deps` gets one for `require("@<name>")`. |
+| `.vscode/settings.json` | Settings for the VS Code extension: `luau-lsp.platform.type` set to `"standard"`, the Rojo sourcemap turned off, and `globals.d.luau` loaded as a definition file. |
+
+`.sonata/types` belongs to Sonata: it's rewritten each time, so don't edit it. Run
+`sn init --lsp-only` again after updating Sonata to get the types of the new version.
+
+An existing `.luaurc` or `.vscode/settings.json` is merged into: other settings and aliases are
+kept. A file with comments is left alone instead, since rewriting it would drop them;
+`sn init` then prints what to add by hand. Other editors need the same settings as the
+VS Code ones: the `standard` platform, and `.sonata/types/globals.d.luau` as a definition
+file (`--definitions:@sonata=.sonata/types/globals.d.luau`).
+
+The package aliases follow `.sonata/deps`: [`sn pkg add`](#sn-pkg-add),
+[`remove`](#sn-pkg-remove), [`update`](#sn-pkg-update) and the `--install` option of
+`sn run` and `sn build` update them in projects set up this way.
+
+!!! note
+    luau-lsp loads a package's `init.luau`, while Sonata loads its manifest's
+    [`entrypoint`](manifest.md#entrypoint). For a package whose entrypoint is another file
+    (such as the default `main.luau`), the alias points to that file: `require("@name")` is
+    typed, but `require("@name/file")` is looked for next to the entrypoint instead of at the
+    package root.
 
 ## `sn run` {#sn-run}
 
@@ -120,7 +164,10 @@ first argument is only taken as the path when it clearly is one: it starts with 
 or `~`, or is a Windows drive path like `C:\...`. A bare name or a URL such as
 `github.com/user/repo` is never mistaken for a path. A bare `--` ends option parsing.
 
-### `sn pkg add`
+In a project set up with [`sn init --lsp`](#sn-init-lsp), `add`, `remove` and `update` also
+update the package aliases in `.luaurc`.
+
+### `sn pkg add` {#sn-pkg-add}
 
 ```
 sn pkg add [path] [deps] [options]
@@ -147,7 +194,7 @@ sn pkg add -i
 The command prints `<added> out of <total> dependencies successfully installed` and exits with
 status 1 if any of them failed.
 
-### `sn pkg remove`
+### `sn pkg remove` {#sn-pkg-remove}
 
 ```
 sn pkg remove [path] <names> [options]
@@ -169,7 +216,7 @@ sn pkg remove json --nomanifest
 sn pkg remove '*'
 ```
 
-### `sn pkg update`
+### `sn pkg update` {#sn-pkg-update}
 
 ```
 sn pkg update [path] [names]
