@@ -110,6 +110,7 @@ this program" apart from "unknown".
 | `datetime` | `openDatetime` | `src/core/libs/datetime.cpp` |
 | `fs` | `openFs` | `src/core/libs/fs.cpp`, `fs/` |
 | `json` | `openJson` | `src/core/libs/json.cpp` |
+| `luau` | `openLuau` | `src/core/libs/luau.cpp` |
 | `net` | `openNet` | `src/core/libs/net.cpp`, `net/` |
 | `path` | `openPath` | `src/core/libs/path.cpp` |
 | `pocket` | `openPocket` | `src/core/libs/pocket.cpp` |

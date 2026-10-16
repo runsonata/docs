@@ -95,6 +95,7 @@ nav:
             - "@sonata/datetime": api/module/datetime.md
             - "@sonata/fs": api/module/fs.md
             - "@sonata/json": api/module/json.md
+            - "@sonata/luau": api/module/luau.md
             - "@sonata/net": api/module/net.md
             - "@sonata/path": api/module/path.md
             - "@sonata/pocket": api/module/pocket.md

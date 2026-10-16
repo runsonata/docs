@@ -86,7 +86,7 @@ Add the name to `SONATA_ALL_LIBS` in `src/CMakeLists.txt`:
 
 ```cmake
 set(SONATA_ALL_LIBS
-  fs path sys task process term net json crypto datetime compress regex serde sonata pocket hello)
+  fs path sys task process term net json crypto datetime compress regex serde sonata pocket luau hello)
 ```
 
 That's all the registration there is. CMake generates `builtin_registry.cpp` from that list,
