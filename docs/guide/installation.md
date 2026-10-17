@@ -26,6 +26,12 @@ On Windows, in PowerShell:
 ```ps
 irm https://sonata.5418.org/install.ps1 | iex
 ```
+
+If Sonata needs libraries your system doesn't have (libsodium on Linux and macOS, the Visual C++
+runtime on Windows), the script lists them and asks to install them with your package manager
+(apt, dnf, zypper, pacman, Homebrew or winget). Pass `--yes` (`-Yes` on Windows) to install
+them without asking, or `--no-deps` (`-NoDeps`) to only print the command.
+
 ## From a release
 
 Prebuilt archives are attached to the
@@ -54,19 +60,28 @@ together: `sn` looks for `snrt` in `../libexec/sonata/` relative to itself.
 | Git | Needed to clone the source, and at runtime by the package manager. |
 | libzstd *(optional)* | Enables the `zstd` format in `@sonata/compress`. |
 | libsodium *(optional)* | Enables password protection in `@sonata/compress`. |
+| ImageMagick 6 or 7 *(optional)* | Enables `@sonata/image`. Needs the MagickWand development files. |
+
+Without ImageMagick, a build with the default library list leaves `@sonata/image` out and
+prints a warning. A [`SONATA_LIBS`](#cmake-options) list that names `image` makes it
+required. CMake finds ImageMagick through pkg-config, or on Windows through the official
+installer's development headers (vcpkg has no ImageMagick). It is always linked as a shared
+library.
 
 On Debian or Ubuntu:
 
 ```sh
 sudo apt install build-essential cmake git zlib1g-dev libssl-dev
 # optional
-sudo apt install libzstd-dev libsodium-dev
+sudo apt install libzstd-dev libsodium-dev libmagickwand-dev
 ```
 
 On macOS with Homebrew:
 
 ```sh
 brew install cmake openssl
+# optional
+brew install imagemagick
 ```
 
 ### Building

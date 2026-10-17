@@ -30,9 +30,10 @@ end
   loads installed packages.
 - **A package manager.** Dependencies are plain Git repositories. `sn pkg` installs, updates,
   removes and inspects them, and a lock file pins the exact commits.
-- **16 built-in libraries.** Filesystem, paths, processes, the terminal, networking with TLS,
+- **17 built-in libraries.** Filesystem, paths, processes, the terminal, networking with TLS,
   JSON/YAML/TOML/CSV, cryptography, dates and time zones, compression, regular expressions,
-  tasks, sandboxed Luau VMs and more. Import them with `require("@sonata/<name>")`.
+  tasks, sandboxed Luau VMs, image editing and more. Import them with
+  `require("@sonata/<name>")`.
 - **Tasks.** Every program runs on a scheduler. Waiting for a socket, a child process, a timer
   or a channel lets the other tasks run.
 - **Standalone executables.** `sn build` compiles your project and its dependencies into

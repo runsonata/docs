@@ -35,6 +35,7 @@ local fs = require("@sonata/fs")
 | [`@sonata/crypto`](crypto.md) | Hashes, HMAC, key derivation, ciphers, signatures, random values, UUIDs. |
 | [`@sonata/datetime`](datetime.md) | Dates, times and time zones, precise to the nanosecond. |
 | [`@sonata/fs`](fs.md) | Files, directories, globbing, watching and locking. |
+| [`@sonata/image`](image.md) | Load, edit and save images with ImageMagick: resizing, filters, drawing, text, animated GIFs. |
 | [`@sonata/json`](json.md) | Parse, serialize and edit JSON. |
 | [`@sonata/luau`](luau.md) | Compile and run Luau code, in custom environments or isolated VMs with time and memory limits. |
 | [`@sonata/net`](net.md) | TCP, UDP, Unix sockets, TLS, DNS, IP addresses, URLs, HTTP/1.1 and WebSocket wire formats. |
@@ -66,8 +67,8 @@ fs.copyFile(from: string, to: string, overwrite: boolean?): ()
 Libraries differ in how they report failure, and each page says which applies:
 
 - **Raise**: the function raises a Luau error (catch it with `pcall`). Used by `fs`, `path`,
-  `json`, `luau` (except `luau.load` and `vm:try`), `regex`, `serde`, `sonata` and
-  `pocket.read`.
+  `image`, `json`, `luau` (except `luau.load` and `vm:try`), `regex`, `serde`, `sonata`
+  and `pocket.read`.
 - **Return `nil, message`**: failures that depend on the outside world return `nil` and a
   message; only misuse (bad argument types) raises. Used by `net`, `term` streams, and parts of
   `process` and `crypto`.

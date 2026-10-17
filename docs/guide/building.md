@@ -110,6 +110,8 @@ further and links everything statically (the C runtime too, on Windows).
 
 - It needs CMake, a C++ compiler and static versions of zlib and OpenSSL (if `net` is selected).
 - It isn't possible on macOS, which has no static system libraries.
+- It can't include `@sonata/image`: ImageMagick, and the libraries it was built with, are
+  linked as shared libraries.
 - On Linux with glibc, DNS lookups in `@sonata/net` still load glibc's NSS modules at runtime.
   For a program that runs on any Linux, build Sonata with a musl toolchain (Alpine, or
   `musl-gcc`).

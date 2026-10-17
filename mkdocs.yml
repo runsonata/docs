@@ -94,6 +94,7 @@ nav:
             - "@sonata/crypto": api/module/crypto.md
             - "@sonata/datetime": api/module/datetime.md
             - "@sonata/fs": api/module/fs.md
+            - "@sonata/image": api/module/image.md
             - "@sonata/json": api/module/json.md
             - "@sonata/luau": api/module/luau.md
             - "@sonata/net": api/module/net.md

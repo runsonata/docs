@@ -109,6 +109,7 @@ this program" apart from "unknown".
 | `crypto` | `openCrypto` | `src/core/libs/crypto.cpp` |
 | `datetime` | `openDatetime` | `src/core/libs/datetime.cpp` |
 | `fs` | `openFs` | `src/core/libs/fs.cpp`, `fs/` |
+| `image` | `openImage` | `src/core/libs/image.cpp` |
 | `json` | `openJson` | `src/core/libs/json.cpp` |
 | `luau` | `openLuau` | `src/core/libs/luau.cpp` |
 | `net` | `openNet` | `src/core/libs/net.cpp`, `net/` |
