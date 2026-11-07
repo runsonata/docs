@@ -1,0 +1,9 @@
+# Build output
+site/
+venv/
+.cache/
+
+# Editors and tools
+.DS_Store
+.vscode/
+.idea/
