@@ -1,21 +1,14 @@
 # @sonata/net
 
-Networking building blocks: sockets, TLS, DNS, IP addresses, URLs, and the wire formats of
-HTTP/1.1 and WebSocket. It has everything a protocol library (an HTTP client or server, a
-WebSocket library, ...) needs, without being one itself.
+An HTTP client, and the building blocks under it: sockets, TLS, DNS, IP addresses, URLs, and the
+wire formats of HTTP/1.1 and WebSocket, for writing other protocols (or another HTTP client or
+server) in plain Luau.
 
 ```luau
 local net = require("@sonata/net")
 
-local sock = assert(net.connect("example.com", 443, { tls = true, timeout = 10 }))
-sock:send(net.http.formatRequest({
-    method = "GET",
-    target = "/",
-    headers = { host = "example.com", connection = "close" },
-}))
-local head = sock:recvUntil("\r\n\r\n")
-print(net.http.parseResponse(head).status) --> 200
-sock:close()
+local res = assert(net.request("https://example.com/"))
+print(res.status, res.headers["content-type"]) --> 200  text/html
 ```
 
 **Errors:** failures that depend on the outside world (connection refused, timeouts, DNS
@@ -23,9 +16,133 @@ errors, ...) **don't raise**: the call returns `nil, message`. Only misuse (wron
 types, using a closed socket) raises. Wrap calls in `assert` when a failure should stop the
 program.
 
-**Waiting:** connecting, reading, accepting, DNS lookups and TLS handshakes never block other
-[tasks](task.md). Outside a task, they wait right there. Sockets close themselves when garbage
-collected.
+**Waiting:** requests, connecting, reading, accepting, DNS lookups and TLS handshakes never block
+other [tasks](task.md). Outside a task, they wait right there. Sockets close themselves when
+garbage collected.
+
+## HTTP client
+
+### net.request
+
+```luau
+net.request(url: string, options: RequestOptions?): (Response?, string?)
+
+type RequestOptions = {
+    method: string?,                 -- default "GET"
+    headers: Headers?,               -- { name = value | { value } } or { { name, value } }
+    query: (string | table)?,        -- added to the URL's query
+    body: (string | () -> string?)?,
+    form: table?,                    -- application/x-www-form-urlencoded
+    multipart: { Part }?,            -- multipart/form-data
+    timeout: number?,                -- seconds, default 30
+    redirects: (number | false)?,    -- default 10
+    decompress: boolean?,            -- default true
+    keepAlive: boolean?,             -- default true
+    maxSize: number?,                -- bytes, default 256 MiB
+    stream: boolean?,                -- default false
+    tls: (TlsOptions | TlsContext)?,
+    proxy: (string | ProxyOptions)?,
+    unix: string?,
+}
+```
+
+Makes an HTTP/1.1 request and reads the response. A status other than 2xx is still a response,
+with `ok` set to `false`. Only failing to get a response at all (the connection is refused, the
+certificate is wrong, the server times out, ...) returns `nil, message`.
+
+```luau
+local json = require("@sonata/json")
+
+local res = assert(net.request("https://api.github.com/repos/luau-lang/luau", {
+    headers = { accept = "application/vnd.github+json" },
+}))
+if res.ok then
+    print(json.decode(res.body).stargazers_count)
+else
+    print("GitHub said " .. res.status .. " " .. res.reason)
+end
+```
+
+**Headers.** `Host`, `User-Agent` (`sonata/<version>`), `Accept` (`*/*`) and `Accept-Encoding`
+are sent unless `headers` has its own. Credentials in the URL (`https://user:pass@host/`) are
+sent as Basic authentication, and kept for redirects within the same origin.
+
+**Bodies.** Give one of `body`, `form` (a table, as for [`net.url.buildQuery`](#other-url-functions))
+or `multipart` (parts, as for [`net.http.encodeMultipart`](#multipart)). The last two also set
+`Content-Type`. A string body is sent with its length. A function body is called for the next
+piece until it returns `nil`, and is sent chunked unless `headers` gives a `Content-Length`:
+
+```luau
+local fs = require("@sonata/fs")
+
+local reader = fs.openReader("backup.tar")
+local res = assert(net.request("https://example.com/upload", {
+    method = "PUT",
+    body = function() return reader:read() end,
+}))
+reader:close()
+```
+
+**Redirects** are followed, up to `redirects` of them. A 303, and a 301 or 302 answering a POST,
+turn the request into a GET without a body, the way browsers do. `Authorization` and `Cookie`
+aren't sent on to another origin. With `redirects = false`, the redirect itself is returned. A
+redirect that would need a function body again isn't followed either, since that body has been
+used up.
+
+**Timeouts.** `timeout` is how long the server may keep the request waiting at any one point:
+connecting, sending, or between two pieces of the response. `math.huge` waits forever. To limit
+the whole request, wrap it in [`task.timeout`](task.md).
+
+**Compression.** `gzip`, `deflate` and `zstd` responses are decompressed; `res.headers` still
+shows what was sent. Other codings are left as they came. `decompress = false` neither asks for
+compression nor undoes it.
+
+**Connections** are kept open and reused for later requests to the same origin, made the same
+way: requests with their own `tls` options or a `proxy` table get connections of their own. An
+idle connection the server has closed is noticed and replaced, and a GET (or another idempotent
+method) is sent again if a reused connection dies before answering. `keepAlive = false` sends
+`Connection: close` and keeps nothing.
+
+**HTTPS** checks the server's certificate against the system's root certificates (see [TLS](#tls)).
+`tls` takes the same options as [`net.connect`](#netconnect), or a [context](#nettlscontext).
+
+**Proxies and Unix sockets.** `proxy` is as for [`net.connect`](#netconnect); an HTTP proxy is
+asked for a tunnel (`CONNECT`), for `http` URLs too. `unix` connects to a Unix domain socket
+instead of the URL's host, which still gives the `Host` header:
+
+```luau
+local res = assert(net.request("http://localhost/v1.43/containers/json", { unix = "/var/run/docker.sock" }))
+```
+
+### Response
+
+| Field | Type | Description |
+|---|---|---|
+| `ok` | `boolean` | `status` is 200–299. |
+| `status`, `reason`, `version` | `number`, `string`, `string` | `200`, `"OK"`, `"1.1"` |
+| `headers` | `{ [string]: string }` | Lower-case names, repeated headers joined by `", "` (`set-cookie` by `"\n"`). |
+| `headerList` | `{ { string } }` | `{ { name, value } }` exactly as received. |
+| `body` | `string` | The whole body, decompressed. `""` with `stream`. |
+| `url` | `string` | The URL that answered, after redirects, without credentials. |
+| `socket` | `Socket?` | After `101 Switching Protocols`: the connection, now speaking the new protocol. |
+| `res:read()` | `string?` | The next piece of the body, `nil` at the end, or `nil, err`. Without `stream`, the whole body once. |
+| `res:close()` | | Gives up on the rest of a streamed body, and closes its connection. |
+
+A body larger than `maxSize` (at most 1 GiB - 1, the longest string Luau allows) fails the
+request. For anything bigger, or to start on a body before all of it has arrived, set
+`stream = true` and read it in pieces:
+
+```luau
+local res = assert(net.request("https://example.com/big.iso", { stream = true }))
+while true do
+    local piece, err = res:read()
+    if piece == nil then
+        assert(err == nil, err)
+        break
+    end
+    fs.appendFile("big.iso", piece)
+end
+```
 
 ## Sockets
 
@@ -348,7 +465,8 @@ net.url.build({ scheme = "https", host = "a.com", path = "/s", query = { q = "a 
 ## HTTP/1.1
 
 No I/O happens here: these functions turn bytes into tables and tables into bytes, so an HTTP
-client or server can be written on top of the sockets in plain Luau.
+server, or a client that [`net.request`](#netrequest) doesn't cover, can be written on top of the
+sockets in plain Luau.
 
 ### Messages
 

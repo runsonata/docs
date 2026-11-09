@@ -39,7 +39,7 @@ These operations let other tasks run while they wait:
 | Library | Operations |
 |---|---|
 | [`@sonata/task`](../api/module/task.md) | `task.wait`, `task.join`, `task.all`, `task.race`, `task.timeout`, channels, mutexes, semaphores, events, groups |
-| [`@sonata/net`](../api/module/net.md) | connecting, `send`, `recv*`, `accept`, DNS lookups, TLS handshakes |
+| [`@sonata/net`](../api/module/net.md) | `request`, connecting, `send`, `recv*`, `accept`, DNS lookups, TLS handshakes |
 | [`@sonata/process`](../api/module/process.md) | `process.exec`, `child:wait`, reading and writing pipes |
 | [`@sonata/term`](../api/module/term.md) | reading from `term.stdin`, `term.prompt`, `term.readKey` |
 | [`@sonata/fs`](../api/module/fs.md) | `watcher:next`, `fs.lock` |
