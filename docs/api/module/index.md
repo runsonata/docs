@@ -44,6 +44,7 @@ local fs = require("@sonata/fs")
 | [`@sonata/regex`](regex.md) | ECMAScript regular expressions. |
 | [`@sonata/serde`](serde.md) | YAML, TOML, INI, CSV and TSV, plus a toolkit for custom formats. |
 | [`@sonata/sonata`](sonata.md) | Sonata's own internals: build info, projects and the package manager. |
+| [`@sonata/stream`](stream.md) | Readers and writers: piping, lines, collecting and transforms, for files, sockets, pipes and responses alike. |
 | [`@sonata/sys`](sys.md) | Facts about the machine, clocks and sleeping. |
 | [`@sonata/task`](task.md) | Tasks and the tools to coordinate them. |
 | [`@sonata/term`](term.md) | Standard streams, colors, cursor control and keyboard input. |

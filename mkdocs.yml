@@ -105,6 +105,7 @@ nav:
             - "@sonata/regex": api/module/regex.md
             - "@sonata/serde": api/module/serde.md
             - "@sonata/sonata": api/module/sonata.md
+            - "@sonata/stream": api/module/stream.md
             - "@sonata/sys": api/module/sys.md
             - "@sonata/task": api/module/task.md
             - "@sonata/term": api/module/term.md

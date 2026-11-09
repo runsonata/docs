@@ -135,6 +135,43 @@ end
 table.insert(out, finish())
 ```
 
+### compress.decodeStream
+
+```luau
+compress.decodeStream(reader: Reader, format: string?, maxSize: number?): Reader
+```
+
+A [reader](stream.md#readers-and-writers) of the decompressed contents of `reader`: a file, a
+socket, a response, anything with `read`. `format` defaults to gzip, and `maxSize` caps each
+piece, as for a decoder. Reading raises if the data is damaged or cut short. Closing it closes
+`reader`.
+
+```luau
+local stream = require("@sonata/stream")
+
+for line in stream.lines(compress.decodeStream(fs.open("app.log.gz"))) do
+    print(line)
+end
+```
+
+### compress.encodeStream
+
+```luau
+compress.encodeStream(writer: Writer, format: string?, level: (number | string)?): Writer
+```
+
+A [writer](stream.md#readers-and-writers) that compresses what's written to it into `writer`.
+It also has `flush()`, as an encoder does. `close()` ends the compressed data but leaves
+`writer` open, so a file can still be written to or closed afterwards.
+
+```luau
+local file = fs.open("out.gz", "w")
+local gzip = compress.encodeStream(file)
+gzip:write("hello\n")
+gzip:close()
+file:close()
+```
+
 ## Archives
 
 `compress.tar` and `compress.zip` turn a list of entries into an archive and back, in memory.

@@ -31,7 +31,7 @@ type RequestOptions = {
     method: string?,                 -- default "GET"
     headers: Headers?,               -- { name = value | { value } } or { { name, value } }
     query: (string | table)?,        -- added to the URL's query
-    body: (string | () -> string?)?,
+    body: (string | buffer | (() -> string?) | Reader)?,
     form: table?,                    -- application/x-www-form-urlencoded
     multipart: { Part }?,            -- multipart/form-data
     timeout: number?,                -- seconds, default 30
@@ -69,19 +69,22 @@ sent as Basic authentication, and kept for redirects within the same origin.
 
 **Bodies.** Give one of `body`, `form` (a table, as for [`net.url.buildQuery`](#other-url-functions))
 or `multipart` (parts, as for [`net.http.encodeMultipart`](#multipart)). The last two also set
-`Content-Type`. A string body is sent with its length. A function body is called for the next
-piece until it returns `nil`, and is sent chunked unless `headers` gives a `Content-Length`:
+`Content-Type`. A string or buffer body is sent with its length. A function body is called for
+the next piece until it returns `nil`, and a [reader](stream.md#readers-and-writers) is read
+until it ends; both are sent chunked unless `headers` gives a `Content-Length`:
 
 ```luau
 local fs = require("@sonata/fs")
 
-local reader = fs.openReader("backup.tar")
+local file = fs.open("backup.tar")
 local res = assert(net.request("https://example.com/upload", {
     method = "PUT",
-    body = function() return reader:read() end,
+    body = file,
 }))
-reader:close()
+file:close()
 ```
+
+A streamed response is a reader too, so it can be the body of the next request.
 
 **Redirects** are followed, up to `redirects` of them. A 303, and a 301 or 302 answering a POST,
 turn the request into a GET without a body, the way browsers do. `Authorization` and `Cookie`
@@ -245,6 +248,8 @@ write.
 | Method | Returns | Description |
 |---|---|---|
 | `sock:send(data)` | `bytesSent` | Sends everything, or returns `nil, err, bytesSentSoFar`. |
+| `sock:write(data)` | | Like `send`, but raises instead of returning an error. With `read`, makes a socket a [stream](stream.md) reader and writer. |
+| `sock:read(max?)` | `string?` | What has arrived, up to `max` bytes (default 64 KiB); `nil` once the peer has closed the connection. Errors and timeouts raise. |
 | `sock:recv(max?, exact?)` | `string` | Up to `max` bytes (default 4096). With `exact`, waits for all of them. `""` means the peer closed the connection. |
 | `sock:recvUntil(delim, max?)` | `string` | Everything up to and including `delim` (`max` defaults to 1 MiB). |
 | `sock:recvLine(max?)` | `string` | One line, without `"\n"` or `"\r\n"`. The last line may lack one. |
