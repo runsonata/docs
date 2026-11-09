@@ -285,12 +285,35 @@ fs.lstat(path: string): Stat
 type Stat = {
     kind: "file" | "directory" | "symlink" | "other",
     size: number,     -- bytes; 0 for anything but regular files
-    modified: number, -- Unix seconds
+    modified: number, -- Unix seconds, with fractions
+    accessed: number, -- Unix seconds
+    changed: number?, -- when the metadata last changed (not on Windows)
+    created: number?, -- only where the OS keeps it: macOS, BSD and Windows
     mode: number,     -- permission bits
+    uid: number?,     -- owner and group IDs (not on Windows)
+    gid: number?,
+    inode: number,    -- with device, identifies the file; Windows: its file ID
+    device: number,   -- Windows: the volume serial number
+    links: number,    -- how many names (hard links) the file has
 }
 ```
 
-`stat` follows symlinks; `lstat` describes the link itself.
+`stat` follows symlinks; `lstat` describes the link itself, its times included. Two paths are
+the same file when both `inode` and `device` match.
+
+### fs.setTimes
+
+```luau
+fs.setTimes(path: string, times: { modified: number?, accessed: number? }, followSymlinks: boolean?): ()
+```
+
+Sets a file's modification and access times, in Unix seconds; a time that is left out stays as
+it is. With `followSymlinks = false`, a symlink's own times change instead of its target's
+(not every OS allows this).
+
+```luau
+fs.setTimes("unpacked/readme.md", { modified = entry.modified })
+```
 
 ### fs.realPath
 
@@ -317,6 +340,25 @@ fs.readLink(path: string): string
 ```
 
 The target of a symbolic link.
+
+### fs.hardLink
+
+```luau
+fs.hardLink(target: string, link: string): ()
+```
+
+Gives the file `target` a second name, `link`. Both names are the same file: a change through
+one shows through the other, and the contents last until every name is removed. Both must be
+on the same filesystem, and some systems (Android apps, for one) don't allow it.
+
+### fs.chown
+
+```luau
+fs.chown(path: string, uid: number?, gid: number?, followSymlinks: boolean?): ()
+```
+
+Changes a file's owner and group; `nil` leaves one as it is. Changing the owner usually needs
+root. Windows has no such IDs, so there it raises.
 
 ### fs.chmod
 
@@ -360,6 +402,16 @@ fs.makeTempDir(prefix: string?): string
 
 Creates a new, empty, private directory inside the temporary directory and returns its path.
 `prefix` defaults to `"sonata-"`.
+
+### fs.diskSpace
+
+```luau
+fs.diskSpace(path: string?): { total: number, free: number, available: number }
+```
+
+The size of the filesystem `path` (default `"."`) is on, and how much of it is free, in bytes.
+`available` is what this program may use, which can be less than `free` (space kept for root,
+quotas).
 
 ## Finding files
 
