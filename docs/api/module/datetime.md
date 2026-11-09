@@ -36,12 +36,38 @@ Wherever a `zone` is accepted (default UTC), it can be:
 |---|---|
 | A number: a fixed offset in seconds **east** of UTC | `19800` |
 | A fixed offset string (ISO sign: east is positive) | `"UTC"`, `"Z"`, `"+05:30"`, `"-0800"`, `"UTC+2"` |
-| An IANA zone name from the built-in table | `"Europe/Paris"`, `"America/New_York"` |
-| A POSIX TZ string (**west** is positive) | `"EST5EDT,M3.2.0,M11.1.0"`, `"<+03>-3"` |
+| An IANA zone name | `"Europe/Paris"`, `"America/New_York"` |
+| `"local"`: the machine's zone (see [below](#the-local-zone)) | `"local"` |
+| A POSIX TZ string (**west** is positive) | `"CET-1CEST,M3.5.0,M10.5.0/3"`, `"<+03>-3"` |
 
-Only the **current** rules of each zone are modeled: there are no historical transitions and no
-leap seconds. A local time in a DST gap moves forward by the gap; an ambiguous one picks the
-earlier instant.
+IANA zones carry their **whole history**: Istanbul was on +02:00 with summer time in 2010 and is
+on +03:00 all year now, and both come out right. The data is IANA's time zone database,
+built into `sn` ([`datetime.tzdata`](#datetimezones-datetimetzdata) says which release), so it
+is the same on every machine and needs nothing installed. There are no leap seconds.
+
+A local time in a DST gap moves forward by the gap; an ambiguous one picks the earlier instant.
+Names are case-sensitive, and a misspelled one raises with a suggestion.
+
+```luau
+datetime.format(1278000000, "%F %T %Z", "Europe/Istanbul") --> "2010-07-01 19:00:00 EEST"
+datetime.format(1782900000, "%F %T %Z", "Europe/Istanbul") --> "2026-07-01 13:00:00 +03"
+```
+
+### The local zone
+
+The **default zone is UTC**, so a program gives the same answers wherever it runs. For the
+machine's own time, pass `"local"`:
+
+```luau
+print(datetime.format(datetime.now(), "%H:%M %Z", "local")) --> "21:04 CEST"
+print(datetime.localZone())                                  --> "Europe/Paris"
+```
+
+`"local"` is what the `TZ` environment variable says, if it's set: a zone name (`Asia/Tokyo` or
+`:Asia/Tokyo`), a path to a zone file, or a POSIX TZ string. An empty `TZ` means UTC. Without
+`TZ`, it's the system's setting: the `/etc/localtime` link on Linux, macOS and BSD, the zone
+setting on Android, and on Windows its zone, translated to the IANA name. If none of these says
+anything usable, it's UTC. A change to `TZ` (through `process.env`) is picked up straight away.
 
 ### Fields
 
@@ -153,6 +179,99 @@ datetime.startOf(t: number, unit: string, zone: Zone?, nsec: number?): (number, 
 
 Rounds an instant down to the start of a `"year"`, `"month"`, `"week"` (Monday), `"day"`,
 `"hour"`, `"minute"` or `"second"` in `zone`.
+
+## datetime.diff
+
+```luau
+datetime.diff(from: number, to: number, units: (string | { string })?, zone: Zone?,
+              fromNsec: number?, toNsec: number?): Delta
+```
+
+How far `to` is from `from`. `units` is one unit or a list of them: `"year"`, `"month"`,
+`"week"`, `"day"`, `"hour"`, `"minute"`, `"second"` and `"nsec"` (default: all of them but
+`"week"`). The result is a [`Delta`](#datetimeadd) with a field for every unit asked for: the
+largest number of each that fits, largest first, with whatever is left below the smallest unit
+dropped. If `to` is earlier than `from`, every field is negative or zero.
+
+Calendar units are counted on the wall clock in `zone`, the way [`datetime.add`](#datetimeadd)
+moves it, so adding the result back gives `to` exactly: `add(from, diff(from, to, nil, zone), zone)`
+is `to`. A day is a calendar day, even the 23-hour one when DST starts, and January 31 to
+February 28 is one month.
+
+```luau
+local born = datetime.fromFields({ year = 1990, month = 5, day = 17 }, "local")
+print(datetime.diff(born, (datetime.now()), "year", "local").years)   --> 36
+
+local d = datetime.diff(start, finish)
+print(d.days, d.hours, d.minutes)                                      --> 1  2  30
+
+print(datetime.diff(start, finish, "hour").hours)                      --> 26
+```
+
+## Durations
+
+### datetime.parseDuration
+
+```luau
+datetime.parseDuration(text: string): (Delta?, string?)
+```
+
+Reads an ISO 8601 duration such as `"P1Y2M3DT4H5M6.5S"` into a delta, with a field for each part
+the text gives. A leading `-` makes every part negative, and `W` gives weeks. Hours, minutes and
+seconds may have a fraction (with `.` or `,`), and a fraction of a second becomes `nsec`,
+exactly. Anything else returns `nil` and what's wrong with it.
+
+```luau
+local delta = assert(datetime.parseDuration("PT1H30M"))  --> { hours = 1, minutes = 30 }
+local later = datetime.add(datetime.now(), delta)
+```
+
+### datetime.formatDuration
+
+```luau
+datetime.formatDuration(delta: Delta): string
+```
+
+Writes a delta as an ISO 8601 duration: `{ days = 1, hours = 2 }` gives `"P1DT2H"`, and an empty
+one gives `"PT0S"`. ISO 8601 has a sign for the whole duration only, so every part has to be
+positive, or every part negative.
+
+## datetime.relative
+
+```luau
+datetime.relative(t: number, now: number?): string
+```
+
+How long ago `t` was, or how far off it is, in English: `"just now"`, `"5 minutes ago"`,
+`"in 3 days"`. The unit is the largest one that is at least 1 (seconds, minutes, hours, days,
+weeks, months of 30.436875 days, years of 365.2425 days), rounded down. `now` defaults to the
+current time.
+
+```luau
+print(datetime.relative(entry.created))    --> "3 hours ago"
+```
+
+Functions that give an instant also give its nanoseconds, so wrap them in parentheses to pass
+only the instant: `datetime.relative((datetime.parse(text)))`.
+
+## datetime.zones / datetime.tzdata
+
+```luau
+datetime.zones(): { string }
+datetime.tzdata: string
+```
+
+Every IANA zone name, sorted (about 600, including old names such as `"US/Eastern"`), and the
+release of the database they come from, such as `"2026e"`.
+
+## datetime.localZone
+
+```luau
+datetime.localZone(): string
+```
+
+The name of the zone `"local"` means, as described [above](#the-local-zone): an IANA name, the
+POSIX TZ string `TZ` gave, or `"UTC"`.
 
 ## datetime.convert
 
