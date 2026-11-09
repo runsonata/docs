@@ -31,7 +31,7 @@ local fs = require("@sonata/fs")
 
 | Library | Description |
 |---|---|
-| [`@sonata/compress`](compress.md) | gzip, zlib, deflate and zstd compression, streaming, checksums. |
+| [`@sonata/compress`](compress.md) | gzip, zlib, deflate and zstd compression, tar and zip archives, streaming, checksums. |
 | [`@sonata/crypto`](crypto.md) | Hashes, HMAC, key derivation, ciphers, signatures, random values, UUIDs. |
 | [`@sonata/datetime`](datetime.md) | Dates, times and time zones, precise to the nanosecond. |
 | [`@sonata/fs`](fs.md) | Files, directories, globbing, watching and locking. |
