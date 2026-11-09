@@ -262,7 +262,7 @@ datetime.tzdata: string
 ```
 
 Every IANA zone name, sorted (about 600, including old names such as `"US/Eastern"`), and the
-release of the database they come from, such as `"2026e"`.
+release of the database they come from, such as `"2026f"`.
 
 ## datetime.localZone
 
