@@ -42,6 +42,26 @@ serde.decode(format: string | Format, text: string | buffer, options: Options?):
 
 Parses `text`.
 
+## serde.csvReader
+
+```luau
+serde.csvReader(reader: Reader, options: Options?): () -> { [any]: any }?
+```
+
+The rows of CSV from a [reader](stream.md#readers-and-writers), one at a time, so a file of any
+size can be read while only a row is in memory. `header`, `typed` and `delimiter` mean what they
+mean for `decode` (for TSV, `delimiter = "\t"`): with a header, each row is a table keyed by its
+columns; without one, an array of its fields. Quoted fields may hold line breaks, and a piece
+of input can end anywhere, even in the middle of one.
+
+```luau
+local fs = require("@sonata/fs")
+
+for row in serde.csvReader(fs.open("people.csv"), { typed = true }) do
+    print(row.name, row.age)
+end
+```
+
 ## serde.encode
 
 ```luau

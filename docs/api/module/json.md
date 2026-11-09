@@ -50,6 +50,31 @@ Parses a JSON document.
 json.decode('[1, "two", null]') --> { 1, "two", json.null }
 ```
 
+## json.decodeStream
+
+```luau
+json.decodeStream(reader: Reader, options: { elements: boolean? }?): () -> any
+```
+
+The JSON values in a [reader](stream.md#readers-and-writers), decoded one at a time, so a
+document of any size can be read while only one value is in memory. By default the values come
+one after another with whitespace between them, which is also how JSON Lines (NDJSON) is
+written. With `elements = true`, the input is a single array, and its elements are the values.
+
+```luau
+local fs = require("@sonata/fs")
+
+for item in json.decodeStream(fs.open("items.json"), { elements = true }) do
+    print(item.id)
+end
+
+for event in json.decodeStream(fs.open("events.jsonl")) do
+    print(event.type)
+end
+```
+
+Errors say where they are as lines and columns from the start of the stream.
+
 ## json.encode
 
 ```luau
