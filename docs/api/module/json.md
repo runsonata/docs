@@ -41,7 +41,7 @@ A unique value standing for JSON `null`.
 ## json.decode
 
 ```luau
-json.decode(text: string): any
+json.decode(text: string | buffer): any
 ```
 
 Parses a JSON document.

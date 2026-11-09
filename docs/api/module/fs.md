@@ -13,7 +13,8 @@ the same wording on every OS whenever the OS has a portable name for the error
 
 **Paths** are UTF-8 strings and may use `/` everywhere (Windows also accepts `\`). Paths this
 library returns (`realPath`, `cwd`, `tempDir`, `makeTempDir`, `readLink`) always use `/`.
-Windows keeps its drive letter (`"C:/Users/me"`). File contents are binary-safe strings.
+Windows keeps its drive letter (`"C:/Users/me"`). File contents are binary-safe strings, and
+`writeFile` and `appendFile` take a `buffer` too.
 
 ## Constants
 
@@ -48,7 +49,7 @@ Returns the whole contents of a file. Files larger than `fs.maxReadSize` are ref
 ### fs.writeFile
 
 ```luau
-fs.writeFile(path: string, contents: string): ()
+fs.writeFile(path: string, contents: string | buffer): ()
 ```
 
 Writes `contents` to a file, creating it or truncating it first.
@@ -56,7 +57,7 @@ Writes `contents` to a file, creating it or truncating it first.
 ### fs.appendFile
 
 ```luau
-fs.appendFile(path: string, contents: string): ()
+fs.appendFile(path: string, contents: string | buffer): ()
 ```
 
 Appends to a file, creating it if it doesn't exist.

@@ -15,6 +15,10 @@ optional `enc` argument can encode their output instead: `"hex"`, `"base64"`, `"
 `"base32"`. Use [`crypto.encode`](#cryptoencode) and [`crypto.decode`](#cryptodecode) to convert
 yourself.
 
+**Buffers.** Every argument that holds bytes (data, keys, passwords, salts, messages, the `aad`
+and `iv` options) can also be a `buffer`. `encrypt`, `decrypt`, `seal`, `open` and `decode`
+answer in the kind of value their data was: give them a buffer and you get a buffer back.
+
 **Errors:** bad arguments (unknown algorithm, wrong key length, ...) raise. Failures that depend
 on the data (a ciphertext that doesn't authenticate, the system's random source being
 unavailable) return `nil, message`.

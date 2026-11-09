@@ -80,7 +80,7 @@ process.exec(program: string, args: { string }?, options: ExecOptions?): ExecRes
 type ExecOptions = {
     cwd: string?,                  -- working directory of the child
     env: { [string]: string }?,    -- added to / overriding the inherited environment
-    stdin: string?,                -- data fed to the child's stdin
+    stdin: (string | buffer)?,     -- data fed to the child's stdin
     shell: boolean?,               -- run through /bin/sh (cmd.exe on Windows); default false
     stdio: ("pipe" | "inherit")?,  -- "pipe" (default) captures stdout/stderr, "inherit" shares ours
 }
@@ -152,7 +152,7 @@ names the signal. A child that is never waited for is reaped in the background.
 
 | Method | Description |
 |---|---|
-| `pipe:write(data: string)` | `true`, or `nil, err`. (stdin) |
+| `pipe:write(data: string \| buffer)` | `true`, or `nil, err`. (stdin) |
 | `pipe:close()` | Closes the pipe; on stdin this sends end-of-file. |
 | `pipe:read(max: number?): string?` | Whatever is available, up to `max` bytes (default 64 KiB). `nil` at end of file. |
 | `pipe:readLine(keepEnding: boolean?): string?` | The next line. `nil` at end of file. |

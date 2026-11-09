@@ -37,7 +37,7 @@ A unique value standing for `null`, since Luau tables can't hold `nil`.
 ## serde.decode
 
 ```luau
-serde.decode(format: string | Format, text: string, options: Options?): any
+serde.decode(format: string | Format, text: string | buffer, options: Options?): any
 ```
 
 Parses `text`.

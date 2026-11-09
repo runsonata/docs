@@ -14,6 +14,10 @@ print(compress.decompress(blob):sub(1, 11)) --> "hello hello"
 **Errors:** functions raise on invalid arguments, corrupt data, and output larger than the
 allowed maximum.
 
+**Buffers.** Data can be a string or a `buffer`, and what comes back is the same kind as what
+went in: compressing a buffer gives a buffer, unpacking an archive held in a buffer gives
+entries whose `data` are buffers. Passwords can be either too.
+
 ## Formats
 
 | Format | Levels (min–max, default) | Detected automatically |
@@ -36,7 +40,7 @@ Output is byte-identical on every OS: the gzip header carries no timestamp or OS
 ## compress.compress
 
 ```luau
-compress.compress(data: string, format: string?, level: (number | string)?, password: string?): string
+compress.compress(data: string | buffer, format: string?, level: (number | string)?, password: (string | buffer)?): string | buffer
 ```
 
 Compresses `data` (default: gzip at the default level). With a `password`, the result is also
@@ -51,7 +55,7 @@ compress.compress(text, nil, nil, "hunter2")  -- gzip, password-protected
 ## compress.decompress
 
 ```luau
-compress.decompress(data: string, format: string?, maxSize: number?, password: string?): string
+compress.decompress(data: string | buffer, format: string?, maxSize: number?, password: (string | buffer)?): string | buffer
 ```
 
 Decompresses `data`. Without `format`, it is detected from the data's magic bytes (raw
@@ -82,7 +86,7 @@ while it runs. Streaming doesn't support passwords.
 ### compress.isEncrypted
 
 ```luau
-compress.isEncrypted(data: string): boolean
+compress.isEncrypted(data: string | buffer): boolean
 ```
 
 Whether `data` is password-protected.
@@ -102,6 +106,9 @@ compress.encoder(format: string?, level: (number | string)?): (write: (chunk: st
 local write, finish = compress.encoder("gzip", 6)
 local blob = write("chunk 1") .. write("chunk 2") .. finish()
 ```
+
+Each call answers in the kind of value the last chunk written was, so writing buffers gets
+buffers back from `write`, `flush` and `finish` alike.
 
 An encoder holds on to what it's given until it has enough to compress well. `flush` returns
 everything written so far in a form the other side can decode right away, without ending the
@@ -138,7 +145,7 @@ They never touch the disk: reading the files to pack and writing out the unpacke
 type Entry = {
     name: string,       -- "docs/readme.md": relative, with / between folders
     kind: string?,      -- "file" (default), "directory", "symlink", "hardlink" or "other"
-    data: string?,      -- a file's contents
+    data: (string | buffer)?, -- a file's contents
     target: string?,    -- where a symlink points, or the entry a hard link shares contents with
     mode: number?,      -- permission bits: default 0644, 0755 for directories, 0777 for symlinks
     modified: number?,  -- Unix seconds: default 1980-01-01
@@ -208,7 +215,7 @@ the archive after decompression; for zip, the total size of its entries.
 
 ```luau
 compress.tar.pack(entries: { Entry }): string
-compress.tar.unpack(data: string, options: { maxSize: number?, trusted: boolean? }?): { Entry }
+compress.tar.unpack(data: string | buffer, options: { maxSize: number?, trusted: boolean? }?): { Entry }
 ```
 
 `pack` writes a POSIX (ustar) archive, adding pax records for names longer than ustar holds and
@@ -225,7 +232,7 @@ kind `"other"` and no data.
 
 ```luau
 compress.zip.pack(entries: { Entry }, level: (number | string)?): string
-compress.zip.unpack(data: string, options: { maxSize: number?, trusted: boolean? }?): { Entry }
+compress.zip.unpack(data: string | buffer, options: { maxSize: number?, trusted: boolean? }?): { Entry }
 ```
 
 `pack` deflates each file at `level` (default 6), and stores it instead where that's smaller,
@@ -243,7 +250,7 @@ uses that timestamp when there is one, or reads the DOS time as UTC.
 ### compress.detect
 
 ```luau
-compress.detect(data: string): string?
+compress.detect(data: string | buffer): string?
 ```
 
 The format of `data` from its magic bytes: `"gzip"`, `"zlib"`, `"zstd"`, or `nil`. For
@@ -274,7 +281,7 @@ compress.levels("zstd") --> 1, 22, 3
 ### compress.crc32
 
 ```luau
-compress.crc32(data: string, seed: number?): number
+compress.crc32(data: string | buffer, seed: number?): number
 ```
 
 The CRC-32 of `data`. Pass a previous result as `seed` to checksum data in pieces.
@@ -287,7 +294,7 @@ compress.crc32("c", compress.crc32("ab"))    --> 891568578
 ### compress.adler32
 
 ```luau
-compress.adler32(data: string, seed: number?): number
+compress.adler32(data: string | buffer, seed: number?): number
 ```
 
 The Adler-32 checksum of `data`, with the same incremental `seed`.

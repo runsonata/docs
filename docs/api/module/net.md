@@ -240,6 +240,8 @@ write.
 
 ### Socket methods
 
+`send`, `sendTo` and `unread` take a string or a `buffer`.
+
 | Method | Returns | Description |
 |---|---|---|
 | `sock:send(data)` | `bytesSent` | Sends everything, or returns `nil, err, bytesSentSoFar`. |
@@ -546,7 +548,8 @@ type Part = { name: string?, value: string, filename: string?, contentType: stri
 
 ## WebSocket
 
-RFC 6455 framing, without I/O: frames go over any socket, plain or TLS.
+RFC 6455 framing, without I/O: frames go over any socket, plain or TLS. Payloads and frames
+can be strings or buffers; `mask` gives back the kind it was given.
 
 | Function | Description |
 |---|---|
