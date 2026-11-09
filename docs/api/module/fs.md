@@ -44,7 +44,7 @@ fs.readFile(path: string): string
 ```
 
 Returns the whole contents of a file. Files larger than `fs.maxReadSize` are refused; use
-[`openReader`](#fsopenreader) for those.
+[`open`](#fsopen) or [`openReader`](#fsopenreader) for those.
 
 ### fs.writeFile
 
@@ -86,6 +86,64 @@ fs.move(from: string, to: string): ()
 ```
 
 Renames a file or directory. Across devices, it copies and then deletes.
+
+## Open files
+
+### fs.open
+
+```luau
+fs.open(path: string, flags: string?, permissions: number?): File
+```
+
+Opens a file to read and write it piece by piece, at any position, so nothing has to fit in
+memory at once. `permissions` (default `0644`, less the umask) is only used when the file is
+created.
+
+| `flags` | Reads | Writes | If the file is missing | If it exists |
+|---|---|---|---|---|
+| `"r"` (default) | yes | | error | |
+| `"r+"` | yes | yes | error | |
+| `"w"` | | yes | created | emptied |
+| `"w+"` | yes | yes | created | emptied |
+| `"a"` | | at the end | created | |
+| `"a+"` | yes | at the end | created | |
+
+Add `"x"` after `w` or `a` (`"wx"`, `"w+x"`, `"ax"`, `"a+x"`) to refuse a file that already
+exists, which is how to create a file nobody else can have created first. A `"b"` is accepted
+and ignored: every file is binary.
+
+```luau
+local log = fs.open("app.log", "a")
+log:write("started\n")
+log:close()
+
+local f = fs.open("data.bin")
+local header = f:read(16)
+local footer = f:readAt(f:size() - 16, 16)
+f:close()
+```
+
+Reads and writes happen at the file's position, which starts at 0 and moves past what was read
+or written. `readAt` and `writeAt` go anywhere without moving it. In `"a"` and `"a+"`, every
+write lands at the end of the file, wherever the position is. A file stays open until `close()`
+or until it is garbage collected.
+
+| Method | Description |
+|---|---|
+| `file:read(count: number?): string?` | Up to `count` bytes (default 64 KiB) from the position. `nil` at the end of the file. |
+| `file:readAt(offset: number, count: number): string` | Up to `count` bytes from `offset`; `""` past the end. |
+| `file:readInto(target: buffer, at: number?, count: number?): number` | Reads straight into a buffer, from byte `at` (default 0), up to `count` bytes (default: the rest of the buffer). Returns how many were read, 0 at the end. |
+| `file:write(data: string \| buffer)` | Writes at the position and moves it. |
+| `file:writeAt(offset: number, data: string \| buffer)` | Writes at `offset`. A gap past the end is filled with zeros. Not for `"a"` and `"a+"`. |
+| `file:seek(whence: string?, offset: number?): number` | Moves the position to `offset` from the start (`"set"`), from the position (`"current"`, the default) or from the end (`"end"`), and returns it. `file:seek()` tells where it is. |
+| `file:size(): number` | The size of the file now. |
+| `file:truncate(size: number?)` | Cuts the file to `size` bytes (default 0), or lengthens it with zeros. The position stays. |
+| `file:sync()` | Returns once everything written is on the disk, not only handed to the OS. |
+| `file:close()` | Closes the file. Twice is fine; anything else afterwards raises. |
+| `file:isClosed(): boolean` | |
+
+Reading a file that wasn't opened for reading, or writing one that wasn't opened for writing,
+raises and says which flags would have worked.
 
 ## Chunked reading
 
