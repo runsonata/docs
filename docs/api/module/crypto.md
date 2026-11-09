@@ -61,6 +61,32 @@ An HMAC of `data` with `key`.
 local signature = crypto.hmac("sha256", secret, body, "hex")
 ```
 
+### crypto.hasher
+
+```luau
+crypto.hasher(algorithm: string, key: (string | buffer)?): Hasher
+```
+
+A hash fed in pieces, for data that doesn't fit in memory or arrives a bit at a time. With a
+`key`, it computes an HMAC instead. The result is the same as `crypto.hash` (or `crypto.hmac`)
+of all the pieces joined.
+
+| Method | Description |
+|---|---|
+| `hasher:update(data: string \| buffer): Hasher` | Adds data. Returns the hasher, so calls can be chained. |
+| `hasher:write(data)` | The same as `update`, so a hasher is a [stream](stream.md) writer. |
+| `hasher:digest(enc: string?): string` | The hash of everything added. This finishes the hasher: using it again raises. |
+| `hasher:algorithm(): string` | The algorithm's name. |
+
+```luau
+local fs = require("@sonata/fs")
+local stream = require("@sonata/stream")
+
+local hasher = crypto.hasher("sha256")
+stream.pipe(fs.open("disk.img"), hasher, { close = true })
+print(hasher:digest("hex"))
+```
+
 ### crypto.equals
 
 ```luau
