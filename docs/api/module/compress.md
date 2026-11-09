@@ -244,9 +244,11 @@ raises on all of these: names that are absolute or contain `..` (with either `/`
 symlinks that point to an absolute path or out of the folder. Setuid, setgid and sticky bits are
 dropped. `{ trusted = true }` skips these checks; use it only for archives you made yourself.
 
-Both formats are read and written whole, in memory, so an archive has to fit in a string
+`pack` and `unpack` work on whole archives, in memory, so an archive has to fit in a string
 (under 1 GiB). `maxSize` (default 256 MiB, up to 1 GiB) caps what unpacking may produce: for tar,
-the archive after decompression; for zip, the total size of its entries.
+the archive after decompression; for zip, the total size of its entries. For bigger archives,
+[`tar.reader`](#compresstarreader), [`tar.writer`](#compresstarwriter) and
+[`zip.open`](#compresszipopen) hold only a piece at a time; they check entries the same way.
 
 ### compress.tar.pack / compress.tar.unpack
 
@@ -265,6 +267,51 @@ first, so `compress.tar.unpack(fs.readFile("x.tar.gz"))` works. xz and bzip2 are
 and the error says which one it was. Devices, FIFOs and other special entries come back with
 kind `"other"` and no data.
 
+### compress.tar.reader
+
+```luau
+compress.tar.reader(reader: Reader, options: { maxSize: number?, trusted: boolean? }?): () -> TarEntry?
+```
+
+The entries of a tar stream, one at a time, without the archive in memory. `reader` is any
+[reader](stream.md#readers-and-writers): a file, a socket, a response. A gzip or zstd stream is
+decompressed on the way (`maxSize` then caps each decompressed piece). Each entry has `name`,
+`kind`, `target`, `mode`, `modified` and `size`, and is a reader of its own data; whatever isn't
+read of it is skipped on the way to the next entry, and reading it after that gives `nil`.
+
+```luau
+local stream = require("@sonata/stream")
+
+for entry in compress.tar.reader(fs.open("big.tar.gz")) do
+    if entry.kind == "file" then
+        stream.pipe(entry, fs.open("out/" .. entry.name, "w"), { close = true })
+    end
+end
+```
+
+### compress.tar.writer
+
+```luau
+compress.tar.writer(writer: Writer): TarWriter
+```
+
+Writes a tar archive into `writer` an entry at a time. `tarWriter:add(entry)` takes an
+[`Entry`](#archives) whose `data` may also be a reader; then its `size` in bytes is needed,
+because a tar header comes before the data, and a reader that gives more or less raises.
+`tarWriter:close()` ends the archive and leaves `writer` open. For a `.tar.gz`, write into
+[`compress.encodeStream`](#compressencodestream):
+
+```luau
+local file = fs.open("backup.tar.gz", "w")
+local gzip = compress.encodeStream(file)
+local tar = compress.tar.writer(gzip)
+tar:add({ name = "notes.txt", data = "remember\n" })
+tar:add({ name = "disk.img", data = fs.open("disk.img"), size = fs.stat("disk.img").size })
+tar:close()
+gzip:close()
+file:close()
+```
+
 ### compress.zip.pack / compress.zip.unpack
 
 ```luau
@@ -281,6 +328,42 @@ else in front of them, such as a self-extracting program. Every entry's CRC is c
 Encrypted entries and other methods (bzip2, lzma, xz, ...) raise. zip times are DOS times,
 which have no time zone: `pack` writes them as UTC and adds a timestamp in seconds, and `unpack`
 uses that timestamp when there is one, or reads the DOS time as UTC.
+
+### compress.zip.list
+
+```luau
+compress.zip.list(data: string | buffer, options: { trusted: boolean? }?): { ZipEntry }
+```
+
+Every entry of a zip archive, from its central directory: nothing is decompressed, so it's quick
+even for a big archive. Each has `name`, `kind`, `mode`, `modified`, `size`, `compressedSize`,
+`method` (`"stored"`, `"deflate"`, `"zstd"`, or the name of one compress can't read) and
+`encrypted`. Symlinks have no `target` here, since that is their data. Unsafe names are refused
+as `unpack` refuses them.
+
+### compress.zip.open
+
+```luau
+compress.zip.open(file: File, options: { maxSize: number?, trusted: boolean? }?): ZipArchive
+```
+
+A zip archive read from a file as it is needed: the central directory when it opens, and each
+entry when you open it. `file` is an [`fs.File`](fs.md#fsopen), or anything with the same
+`readAt` and `size`.
+
+| Method | Description |
+|---|---|
+| `archive:entries(): { ZipEntry }` | Every entry, as `zip.list` describes them, with symlinks' `target`s. |
+| `archive:find(name: string): ZipEntry?` | The entry called `name`, or `nil`. |
+| `archive:open(entry: string \| ZipEntry): Reader` | A [reader](stream.md#readers-and-writers) of the entry's data, decompressed. Its size and CRC are checked when it ends. Encrypted entries and methods compress can't read raise. |
+
+```luau
+local archive = compress.zip.open(fs.open("big.zip"))
+for _, entry in archive:entries() do
+    print(entry.name, entry.size)
+end
+print(stream.readAll(archive:open("readme.md")))
+```
 
 ## Inspection
 
