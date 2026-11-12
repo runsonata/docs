@@ -76,7 +76,7 @@ script as [`args`](../api/module/globals.md).
 Running a project whose declared dependencies aren't installed is an error unless `--install` is
 given. Built-in libraries are restricted to the project's
 [`build.libraries`](manifest.md#buildlibraries), exactly as in a built program. An entry that is
-a [test file](testing.md) may also use `@sonata/test`.
+a [test file](testing.md) follows the [rules of `sn test`](testing.md#libraries-in-tests) instead.
 
 ```sh
 sn run
@@ -125,7 +125,8 @@ sn test [path] [options]
 
 Runs every file named `*.test.luau` in the project containing `path` (default `.`), each as a
 program of its own, and reports the cases [`@sonata/test`](../api/module/test.md) ran in them.
-If `path` is a test file or a folder inside the project, only those test files run. See
+If `path` is a test file or a folder inside the project, only those test files run. Test files
+may require any built-in library; the rest of the project still gets only `build.libraries`. See
 [Testing](testing.md).
 
 | Option | Description |

@@ -49,17 +49,26 @@ $ sn test
 ## How tests run
 
 Each test file runs as a program of its own, in its own VM, the way `sn run` would run it: the
-same dependencies, `@` aliases and [assets](building.md#assets), and the same
-[`build.libraries`](manifest.md#buildlibraries), with `@sonata/test` added. Nothing one file
-does (globals, module state) reaches another. Files run one after another, in path order.
+same dependencies, `@` aliases and [assets](building.md#assets). Nothing one file does
+(globals, module state) reaches another. Files run one after another, in path order.
 
 Inside a file, a case runs where it's declared. That keeps a test file an ordinary program:
 cases can wait for timers, sockets or child processes, and code between cases runs in order.
 A case that fails doesn't stop the others. An error outside any case ends the file, and is
 reported as the file failing to run.
 
-Test files are never part of the program: `sn build` leaves out every `*.test.luau` file, and
-[`sn doctor`](doctor.md) doesn't ask for `test` in `build.libraries`.
+## Libraries in tests
+
+Test files aren't part of the program, so they may require any built-in library, whatever
+[`build.libraries`](manifest.md#buildlibraries) says: a test can use `@sonata/fs` for temporary
+files when the program itself has no use for it. `sn build` leaves out every `*.test.luau` file,
+so nothing a test uses reaches the built program or its size, and [`sn doctor`](doctor.md)
+doesn't check test files against `build.libraries`.
+
+The rest of the project still gets only `build.libraries` under `sn test`, as in a built program,
+so a test can't pass on a require the program would be refused. The one addition is
+`@sonata/test`, which any module may require, so helpers shared by several test files can live in
+ordinary modules.
 
 ## Groups and hooks
 

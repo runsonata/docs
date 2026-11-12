@@ -149,6 +149,16 @@ fails with an error that ends in `hint` (e.g. where to add the library). This en
 Names that aren't registered are ignored. Without a call to this, every registered library is
 available.
 
+### `exemptFromRestriction`
+
+```cpp
+void exemptFromRestriction(std::function<bool(std::string_view modulePath)> exempt);
+```
+
+Modules that `restrictLibraries` doesn't apply to: a `require` from a module for which `exempt`
+returns true may load any library. `sn test` uses it for test files, which aren't part of the
+program, while the program's own modules still get only what a built program would.
+
 ## `ModuleError`
 
 ```cpp
