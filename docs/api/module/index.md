@@ -43,7 +43,7 @@ local fs = require("@sonata/fs")
 | [`@sonata/pocket`](pocket.md) | Read-only asset files packed with the program. |
 | [`@sonata/process`](process.md) | The running program, child processes and signals. |
 | [`@sonata/regex`](regex.md) | ECMAScript regular expressions. |
-| [`@sonata/serde`](serde.md) | YAML, TOML, INI, CSV and TSV, plus a toolkit for custom formats. |
+| [`@sonata/serde`](serde.md) | YAML, TOML, INI, CSV, TSV and XML, plus a toolkit for custom formats. |
 | [`@sonata/sonata`](sonata.md) | Sonata's own internals: build info, projects and the package manager. |
 | [`@sonata/stream`](stream.md) | Readers and writers: piping, lines, collecting and transforms, for files, sockets, pipes and responses alike. |
 | [`@sonata/sys`](sys.md) | Facts about the machine, clocks and sleeping. |

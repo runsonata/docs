@@ -1,7 +1,7 @@
 # @sonata/serde
 
-Parse, serialize and convert structured text (YAML, TOML, INI, CSV, TSV), plus a toolkit for
-writing your own formats. For JSON, see [`@sonata/json`](json.md).
+Parse, serialize and convert structured text (YAML, TOML, INI, CSV, TSV, XML), plus a toolkit
+for writing your own formats. For JSON, see [`@sonata/json`](json.md).
 
 ```luau
 local serde = require("@sonata/serde")
@@ -29,6 +29,90 @@ print(serde.encode("yaml", config))
 | `"ini"` | INI files: sections become nested tables. |
 | `"csv"` | Comma-separated values. |
 | `"tsv"` | Tab-separated values. |
+| `"xml"` | XML documents, as a tree of elements. See [XML](#xml). |
+
+### XML
+
+XML doesn't map onto tables the way the other formats do, so a document is a tree of elements,
+each a table with three fields:
+
+```luau
+local doc = serde.decode("xml", [[
+<catalog>
+  <book id="b1">
+    <title>Dune</title>
+    <note>A <b>classic</b>.</note>
+  </book>
+</catalog>
+]])
+
+--> {
+-->   name = "catalog", attributes = {}, children = {
+-->     { name = "book", attributes = { id = "b1" }, children = {
+-->       { name = "title", attributes = {}, children = { "Dune" } },
+-->       { name = "note", attributes = {}, children = {
+-->         "A ", { name = "b", attributes = {}, children = { "classic" } }, ".",
+-->       } },
+-->     } },
+-->   },
+--> }
+```
+
+- `children` holds elements and strings, in document order. Entities, character references and
+  CDATA sections become plain text, and line endings become `"\n"`.
+- Whitespace between child elements, the indentation of the file, is left out, unless the
+  [`whitespace`](#options) option is set. An element with only whitespace in it keeps it.
+- Comments, processing instructions and the DOCTYPE are skipped. Namespace prefixes stay part of
+  the name (`"svg:rect"`), and `xmlns` declarations are ordinary attributes.
+- Only the five standard entities (`&amp;` `&lt;` `&gt;` `&quot;` `&apos;`) and character
+  references are expanded. A DTD that declares entities is refused, so a document can't pull in
+  external files or expand into gigabytes.
+- Elements can be nested 100 deep.
+
+`serde.encode("xml", element)` writes the same shape back. `attributes` and `children` may be
+left out, and attribute values and text may be numbers or booleans. An element whose content is
+only elements is indented ([`pretty`](#options)); one with text in it is written as it is, so
+mixed content keeps its exact spacing.
+
+```luau
+print(serde.encode("xml", {
+    name = "feed",
+    attributes = { version = 2 },
+    children = {
+        { name = "item", children = { "First & best" } },
+        { name = "item", attributes = { draft = true } },
+    },
+}))
+--> <?xml version="1.0" encoding="UTF-8"?>
+--> <feed version="2">
+-->   <item>First &amp; best</item>
+-->   <item draft="true"/>
+--> </feed>
+```
+
+A small helper goes a long way for reading:
+
+```luau
+-- The first child element called `name`, and the text inside an element.
+local function child(element, name)
+    for _, kid in element.children do
+        if type(kid) == "table" and kid.name == name then
+            return kid
+        end
+    end
+    return nil
+end
+
+local function text(element)
+    local parts = {}
+    for _, kid in element.children do
+        table.insert(parts, if type(kid) == "string" then kid else text(kid))
+    end
+    return table.concat(parts)
+end
+
+print(text(child(child(doc, "book"), "note"))) --> A classic.
+```
 
 ## serde.null
 
@@ -97,12 +181,15 @@ formats, so they can define options of their own.
 
 | Option | Applies to | Description |
 |---|---|---|
-| `indent: number` | yaml encode | Indentation, 2 to 8 (default 2). |
+| `indent: number` | yaml, xml encode | Indentation, 2 to 8 (default 2). |
 | `sort: boolean` | encode | Sort table keys (default `true`; `false` uses Luau's iteration order). |
 | `dropNull: boolean` | decode | Leave out `null` entries of tables. Nulls in arrays stay `serde.null`. |
 | `header: boolean` | csv, tsv | The first row is a header (default `true`): rows become tables keyed by column name. With `false`, rows are arrays. |
 | `typed: boolean` | ini, csv, tsv | Turn numbers and booleans into values instead of strings (default `true` for ini, `false` for csv/tsv). |
 | `delimiter: string` | csv | The field separator, one character (default `","`; tsv uses `"\t"`). |
+| `whitespace: boolean` | xml decode | Keep whitespace-only text between child elements (default `false`). |
+| `pretty: boolean` | xml encode | Put content that's only elements on lines of its own, indented (default `true`). |
+| `declaration: boolean` | xml encode | Start with `<?xml version="1.0" encoding="UTF-8"?>` (default `true`). |
 
 ```luau
 local rows = serde.decode("csv", "name,age\nAda,36\nAlan,41", { typed = true })
