@@ -45,6 +45,7 @@ local fs = require("@sonata/fs")
 | [`@sonata/regex`](regex.md) | ECMAScript regular expressions. |
 | [`@sonata/serde`](serde.md) | YAML, TOML, INI, CSV, TSV and XML, plus a toolkit for custom formats. |
 | [`@sonata/sonata`](sonata.md) | Sonata's own internals: build info, projects and the package manager. |
+| [`@sonata/sqlite`](sqlite.md) | SQLite databases, in a file or in memory. |
 | [`@sonata/stream`](stream.md) | Readers and writers: piping, lines, collecting and transforms, for files, sockets, pipes and responses alike. |
 | [`@sonata/sys`](sys.md) | Facts about the machine, clocks and sleeping. |
 | [`@sonata/task`](task.md) | Tasks and the tools to coordinate them. |
@@ -69,8 +70,8 @@ fs.copyFile(from: string, to: string, overwrite: boolean?): ()
 Libraries differ in how they report failure, and each page says which applies:
 
 - **Raise**: the function raises a Luau error (catch it with `pcall`). Used by `fs`, `path`,
-  `json`, `luau` (except `luau.load` and `vm:try`), `regex`, `serde`, `sonata`
-  and `pocket.read`. `cli` raises for a mistake in the spec; a mistake on the command line is
+  `json`, `luau` (except `luau.load` and `vm:try`), `regex`, `serde`, `sonata`,
+  `sqlite` and `pocket.read`. `cli` raises for a mistake in the spec; a mistake on the command line is
   the user's, and is reported to them.
 - **Return `nil, message`**: failures that depend on the outside world return `nil` and a
   message; only misuse (bad argument types) raises. Used by `net`, `term` streams, and parts of
