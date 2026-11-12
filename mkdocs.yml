@@ -92,6 +92,7 @@ nav:
         - Module:
             - api/module/index.md
             - Globals: api/module/globals.md
+            - "@sonata/cli": api/module/cli.md
             - "@sonata/compress": api/module/compress.md
             - "@sonata/crypto": api/module/crypto.md
             - "@sonata/datetime": api/module/datetime.md

@@ -31,6 +31,7 @@ local fs = require("@sonata/fs")
 
 | Library | Description |
 |---|---|
+| [`@sonata/cli`](cli.md) | Command-line options, arguments and subcommands for programs, with `--help` made from the same declaration. |
 | [`@sonata/compress`](compress.md) | gzip, zlib, deflate and zstd compression, tar and zip archives, streaming, checksums. |
 | [`@sonata/crypto`](crypto.md) | Hashes, HMAC, key derivation, ciphers, signatures, random values, UUIDs. |
 | [`@sonata/datetime`](datetime.md) | Dates, times and time zones, precise to the nanosecond. |
@@ -68,7 +69,8 @@ Libraries differ in how they report failure, and each page says which applies:
 
 - **Raise**: the function raises a Luau error (catch it with `pcall`). Used by `fs`, `path`,
   `json`, `luau` (except `luau.load` and `vm:try`), `regex`, `serde`, `sonata`
-  and `pocket.read`.
+  and `pocket.read`. `cli` raises for a mistake in the spec; a mistake on the command line is
+  the user's, and is reported to them.
 - **Return `nil, message`**: failures that depend on the outside world return `nil` and a
   message; only misuse (bad argument types) raises. Used by `net`, `term` streams, and parts of
   `process` and `crypto`.
