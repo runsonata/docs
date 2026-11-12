@@ -34,6 +34,7 @@ There's nothing to register: a table with the right method works. These all fit 
 | [Sockets](net.md#socket-methods) | `read` | `write` |
 | [`net.request`](net.md) responses, with `stream = true` | `read` | |
 | [`compress.decodeStream`](compress.md#compressdecodestream) / [`compress.encodeStream`](compress.md#compressencodestream) | `read` | `write` |
+| [`pocket.open`](pocket.md#pocketopen) | `read` | |
 
 A reader also works as the `body` of a `net.request`, so a response can be piped straight into
 another request.

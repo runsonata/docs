@@ -19,7 +19,8 @@ namespace.
 | [`PackageError`](../classes/package_manager.md#packageerror) | `project/package.hpp` | Thrown by the package manager. |
 | [`Pocket`](../classes/pocket.md) | `runtime/pocket.hpp` | Read-only asset files for `@sonata/pocket`. |
 | [`DiskPocket`](../classes/pocket.md#diskpocket) | `runtime/pocket.hpp` | Assets read from disk (`sn run`). |
-| [`MemoryPocket`](../classes/pocket.md#memorypocket) | `runtime/pocket.hpp` | Assets held in memory (built programs). |
+| [`BundlePocket`](../classes/pocket.md#bundlepocket) | `runtime/pocket.hpp` | Assets read from a built program's executable. |
+| [`MemoryPocket`](../classes/pocket.md#memorypocket) | `runtime/pocket.hpp` | Assets held in memory (tests). |
 | [`InstalledProject`](#installedproject) | `project/selection.hpp` | An installed dependency, opened as a project. |
 | [`LibraryOptions`](#libraryoptions) | `project/selection.hpp` | Overrides for library selection. |
 | [`LibrarySelection`](#libraryselection) | `project/selection.hpp` | The built-in libraries a program may use. |

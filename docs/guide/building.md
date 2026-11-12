@@ -20,7 +20,8 @@ Building weather 1.2.0 for linux-x64
 3. **Compile.** Every `.luau` file of the project and of each dependency is compiled to
    bytecode. Every literal `require("@sonata/x")` is checked against the selected libraries.
    All compile errors and unselected libraries are reported together.
-4. **Assets.** The files listed in `build.assets` of every package are read.
+4. **Assets.** The files listed in `build.assets` of every package are collected. They are
+   copied into the executable a piece at a time when it's written, so no size limit applies.
 5. **Runtime.** The `sn` executable to start from is picked (see [Runtimes](#runtimes)). Nothing
    is compiled: this step only finds a file.
 6. **Write.** The compiled program is appended to the runtime, producing one executable.
@@ -133,18 +134,28 @@ Under `sn run` the same files are read from disk, and only listed files are visi
 program can't come to depend on a file that won't be packed. Each package has its own assets:
 a dependency's `assets/x` never collides with yours.
 
+A built program doesn't load its assets when it starts: each is read from the executable when a
+script asks for it. Large ones can be read in pieces with
+[`pocket.open`](../api/module/pocket.md#pocketopen) or written to a file with
+[`pocket.copy`](../api/module/pocket.md#pocketcopy), which keeps the executable bit, so a program
+can carry a helper program and run it.
+
 ## The executable format
 
 A built program is `sn` with a bundle appended to it:
 
 ```
-[ sn executable ][ payload ][ trailer (32 bytes) ]
+[ sn executable ][ assets ][ payload ][ trailer (32 bytes) ]
 ```
 
 At startup `sn` reads its own file. If it finds a trailer at the end, it runs the program in the
 payload, and the command line never starts. The payload holds the compiled modules, the packages with their dependencies
-and entrypoints, the assets, and the list of allowed libraries. It is zlib-compressed unless
-`--no-compress` is given, and protected by a CRC-32.
+and entrypoints, the list of allowed libraries, and where each asset is. It is zlib-compressed
+unless `--no-compress` is given, and protected by a CRC-32.
+
+Each asset is stored on its own, before the payload, and has its own CRC-32. With compression,
+an asset is compressed too unless that wouldn't make it smaller (images and archives usually
+are already).
 
 Every `sn` also carries a short stamp with its version and platform, so a runtime for another
 platform can be checked without running it.

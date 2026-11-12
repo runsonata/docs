@@ -72,6 +72,7 @@ its exit code, and the command line never starts. For a plain `sn`, it returns `
 ### How a built program uses it
 
 `runtime::runIfBundled()` reads the [bundle](bundle.md) at the end of its own executable, fills
-a `MemorySource` with the compiled modules and packages, a `MemoryPocket` with the assets, and
+a `MemorySource` with the compiled modules and packages, a `BundlePocket` with where the assets
+are (they're read only when a script asks), and
 registers the aliases and library restriction the bundle carries. Then it calls `runProgram()`
 with `bundled = true`.
