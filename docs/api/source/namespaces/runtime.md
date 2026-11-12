@@ -67,7 +67,8 @@ its exit code, and the command line never starts. For a plain `sn`, it returns `
 1. `Project::find()` locates the project and its entrypoint.
 2. A `PackageManager` checks (or with `--install`, installs) the dependencies and registers an
    `@name` alias for each.
-3. `selectLibraries()` works out the allowed built-in libraries; the loader is restricted to them.
+3. `selectLibraries()` works out the allowed built-in libraries; the loader is restricted to them,
+   and the optional features `build.without` leaves out are turned off.
 4. A `DiskPocket` is filled with every package's `build.assets`.
 5. `runProgram()` runs the entrypoint with a `FileSystemSource`.
 
@@ -76,5 +77,33 @@ its exit code, and the command line never starts. For a plain `sn`, it returns `
 `runtime::runIfBundled()` reads the [bundle](bundle.md) at the end of its own executable, fills
 a `MemorySource` with the compiled modules and packages, a `BundlePocket` with where the assets
 are (they're read only when a script asks), and
-registers the aliases and library restriction the bundle carries. Then it calls `runProgram()`
-with `bundled = true`.
+registers the aliases and library restriction the bundle carries, and turns off the features it
+leaves out. Then it calls `runProgram()` with `bundled = true`.
+
+## Optional features
+
+`#include <sonata/runtime/features.hpp>`
+
+The parts of Sonata that need a native dependency a program can do without: `sodium`
+(libsodium), `sqlite` (SQLite), `tls` (Mbed TLS) and `zstd`. Each comes in two files,
+`<name>.with.cpp` and `<name>.without.cpp`, declared in the library's `library.cmake` with
+`sonata_feature()`, and a runtime links one of them. Everything else is compiled once and shared
+by every runtime, so the runtimes are links, not builds (`cmake/SonataVariants.cmake`).
+
+```cpp
+namespace sonata::features {
+enum class Feature { Sodium, Sqlite, Tls, Zstd };
+
+const std::vector<Info>& all();          // name, dependency, what it's for, the libraries that use it
+std::optional<Feature> find(std::string_view name);
+bool compiled(Feature feature);          // built into this executable
+void disable(Feature feature);           // off for the rest of the process
+bool available(Feature feature);         // compiled, and not turned off
+std::string missing(Feature feature);    // the error for a script that used it anyway
+std::string_view variant();              // "tls+zstd", or "none"
+}
+```
+
+A feature can be missing two ways: not built into the executable, or turned off when the program
+starts. Code checks `available()`, so `sn run` and a program on a fuller runtime than it needs
+refuse exactly what the smallest runtime would.

@@ -58,9 +58,10 @@ namespace.
 `#include <sonata/project/selection.hpp>`
 
 Works out which built-in libraries a program may use from the `build.libraries` lists of the
-root project and every installed dependency. This is a permission list, not a build
-configuration: every library is always in the executable, and both `sn run` and a built program
-refuse the unselected ones. The rules are described in
+root project and every installed dependency, and the optional features the program needs (those
+the libraries use, minus the root's `build.without`). The libraries are a permission list: both
+`sn run` and a built program refuse the unselected ones, and the features decide which runtime
+carries the program (see [`bundle::resolveRuntime`](bundle.md#runtimes)). The rules are described in
 [The project manifest](../../../guide/manifest.md#buildlibraries):
 
 - The result is the union of all the lists.
@@ -111,6 +112,7 @@ struct LibraryOptions {
     std::optional<std::vector<std::string>> rootLibraries; // replaces the root's build.libraries (sn build --libs)
     bool all = false;    // every library, whatever the manifests say (sn build --all-libs)
     bool strict = false; // treat everything as if the root manifest were --!strict
+    std::optional<std::vector<std::string>> without; // replaces the root's build.without (sn build --without)
 };
 ```
 
@@ -122,8 +124,14 @@ struct LibrarySelection {
     bool all = false;                   // libraries == every known library
     std::vector<std::string> warnings;  // for the user; never fatal
     std::string hint;                   // what to tell someone who requires an unselected library
+    std::vector<std::string> without;   // optional features the program leaves out, sorted
+    std::vector<std::string> features;  // optional features it needs, sorted
 };
 ```
+
+A library that is an optional feature as a whole (`sqlite`) goes with it: left out of `libraries`
+when every library is allowed, and an error when a manifest lists it while `build.without` leaves
+it out.
 
 ### `selectLibraries`
 

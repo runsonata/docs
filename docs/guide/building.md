@@ -37,6 +37,7 @@ libraries. Inside it, [`sonata.bundled`](../api/module/globals.md) is `true` and
 | `--output <file>`, `-o` | `build.output` | Where to write the program. Default: `dist/<name>`. On the command line the path is relative to the current directory; in the manifest, to the project root. `.exe` is added on Windows. |
 | `--libs <a,b,...>`, `-l` | `build.libraries` | The built-in libraries the program may use, replacing the root manifest's list. |
 | `--all-libs` | | Allow every built-in library, whatever the manifests say. Can't be combined with `--libs`. |
+| `--without <a,b,...>` | `build.without` | Optional features to leave out, replacing the manifest's list. See [Leaving features out](#leaving-features-out). |
 | `--optimize <0-2>`, `-O` | `build.optimize` | Luau optimization level (default `1`). |
 | `--debug-level <0-2>`, `-g` | `build.debug` | Luau debug info: `0` none, `1` line numbers (default), `2` full. |
 | `--no-compress` / `--compress` | `build.compress` | Don't compress the packed program / do (the default). |
@@ -72,8 +73,9 @@ With this list:
 - `sn build` reports every file and line that requires an unlisted library.
 - A built program refuses the others in the same way, even through a computed require.
 
-Every library is always in the executable: the list decides what a program may use, not what it
-contains, so changing it never slows a build down.
+The list decides what a program may use. It also decides which optional features the program
+needs, and so which [runtime](#leaving-features-out) carries it: leave out every library that
+uses SQLite, and the program can be built without SQLite in it.
 
 Only literal requires (`require("@sonata/fs")`) are checked at build time. A computed require
 still fails at runtime if the library isn't selected.
@@ -96,9 +98,56 @@ This means `sn build`:
 
 `sn build` picks the file to start from like this:
 
-1. With `--runtime <file>`, that file. It has to be an `sn` of the same version.
-2. For another platform (`--target`), the installed runtime for that platform.
-3. Otherwise, the `sn` that's running.
+1. With `--runtime <file>`, that file. It has to be an `sn` of the same version, with every
+   feature the program needs.
+2. Otherwise, the installed runtime for the platform (this one, or `--target`) with the fewest
+   features that has every one the program needs. See [Leaving features out](#leaving-features-out).
+3. For this platform, the `sn` that's running, if nothing smaller is installed.
+
+## Leaving features out
+
+A few parts of Sonata need a native library that a program may have no use for:
+
+| Feature | Library | What needs it |
+|---|---|---|
+| `sqlite` | SQLite | [`@sonata/sqlite`](../api/module/sqlite.md) |
+| `tls` | Mbed TLS | TLS in [`@sonata/net`](../api/module/net.md): `https`, secure sockets |
+| `zstd` | zstd | zstd in [`@sonata/compress`](../api/module/compress.md) and in responses of `@sonata/net` |
+| `sodium` | libsodium | Password protection in [`@sonata/compress`](../api/module/compress.md) |
+
+A program needs a feature when it may use a library that needs it, so the
+[`build.libraries`](manifest.md#buildlibraries) list already decides most of them. To leave one
+out while keeping the library, list it in `build.without`:
+
+```luau
+build = {
+    libraries = { "fs", "net" },
+    without = { "tls" }, -- plain HTTP only
+},
+```
+
+Each combination of features has its own runtime, and the program is built from the one that has
+exactly what it needs, so it carries none of the code it left out. Leaving out everything saves
+about 2 MiB:
+
+| Feature | Size in the executable |
+|---|---|
+| `sqlite` | about 1 MiB |
+| `tls` | about 0.5 MiB |
+| `zstd` | about 0.45 MiB |
+| `sodium` | about 35 KiB |
+
+What's left out behaves the same everywhere: `sn run`, `sn test` and the built program all refuse
+it with a message that names the feature, like `TLS (https and secure sockets) in @sonata/net
+isn't in this program: its build leaves out 'tls'`. Listing a library and leaving out the
+feature it is (`sqlite`) is an error.
+
+`sn` itself has every feature. The others come with each release, in
+`sonata-<platform>-runtimes.tar.gz` (`.zip` for Windows): extract it into
+`$SONATA_HOME/runtimes/<version>/<platform>/` and each runtime lands in a folder named after its
+features, like `tls+zstd/sn` or `none/sn`. If the one a program needs isn't installed, `sn build`
+uses the smallest one that has everything, turns off what the program left out so it still
+behaves the same, and says what's missing.
 
 ### Building for another platform
 
@@ -109,8 +158,9 @@ sn build --target windows-x64
 ```
 
 That file has to be in `$SONATA_HOME/runtimes/<version>/<target>/`, as `sn` (or `sn.exe`). It's
-`bin/sn` from the platform's [release archive](installation.md#from-a-release), and it has to
-match your `sn` version exactly. [`sn doctor`](doctor.md) checks the ones you have.
+in the platform's `sonata-<target>-runtimes` release archive, with the runtimes that
+[leave features out](#leaving-features-out); extract the whole archive into that folder. Each
+runtime has to match your `sn` version exactly. [`sn doctor`](doctor.md) checks the ones you have.
 
 The targets are `linux-x64`, `linux-arm64`, `macos-x64`, `macos-arm64`, `windows-x64` and
 `windows-arm64`.

@@ -63,6 +63,7 @@ struct Bundle {
 
     std::vector<std::string> libraries; // built-in libraries the program may require, sorted
     std::string libraryHint;            // what to tell a script that requires any other one
+    std::vector<std::string> without;   // optional features it leaves out, sorted
 
     // "@name" -> directory, registered like PackageManager::registerAliases().
     std::vector<std::pair<std::string, std::string>> aliases;
@@ -193,14 +194,17 @@ struct Stamp {
     std::uint32_t format = 0;
     std::string version;
     std::string platform;
+    std::vector<std::string> features; // optional features it's built with, sorted
 };
 
 std::optional<Stamp> readStamp(const std::filesystem::path& executable);
 ```
 
 Every `sn` embeds a stamp saying what it is, so a runtime for another platform can be checked
-without running it: `SONATA-RUNTIME|<bundle format>|<sonata version>|<platform>|`. Returns
-`std::nullopt` if `executable` isn't a Sonata runtime.
+without running it: `SONATA-RUNTIME|<bundle format>|<sonata version>|<platform>|<features>|`,
+where `<features>` is like `tls+zstd`, or `none`. Returns `std::nullopt` if `executable` isn't a
+Sonata runtime. The stamp is generated per runtime (`cmake/variant.cpp.in`) as one literal, so it
+can be found in the file.
 
 ## Runtimes
 
@@ -210,26 +214,41 @@ release, kept in `$SONATA_HOME/runtimes/<version>/<target>/`. A runtime must hav
 as the `sn` doing the build, because the bytecode and the bundle format are only promised to match
 within a version.
 
+Runtimes also differ in their [optional features](runtime.md#optional-features). `sn` and
+`<target>/sn` have them all; `<target>/<features>/sn` (like `tls+zstd/sn` or `none/sn`) only
+those. A build takes the installed runtime with the fewest features that has every one the program
+needs, and the program turns off the rest (`Bundle::without`), so it behaves the same whichever
+runtime carries it.
+
 ```cpp
 const std::vector<std::string>& knownTargets();
 bool isWindowsTarget(std::string_view target);
 std::optional<std::filesystem::path> installedRuntimePath(const std::string& target);
+std::optional<std::filesystem::path> installedVariantPath(const std::string& target,
+                                                          const std::vector<std::string>& features);
+std::string variantName(const std::vector<std::string>& features);
 
 struct Runtime {
     std::filesystem::path path;
     std::string target;
-    std::string origin; // for humans: "this sn", "installed runtime", "--runtime"
+    std::string origin;                // for humans: "this sn", "installed runtime", "--runtime"
+    std::vector<std::string> features; // what it's built with, sorted
+    std::vector<std::string> unneeded; // of those, what the program doesn't need (it's turned off)
+    std::string note;                  // a warning for the user, or ""
 };
 
-Runtime resolveRuntime(const std::optional<std::string>& target, const std::optional<std::filesystem::path>& file);
+Runtime resolveRuntime(const std::optional<std::string>& target, const std::optional<std::filesystem::path>& file,
+                       const std::vector<std::string>& features);
 ```
 
 | Function | Description |
 |---|---|
 | `knownTargets()` | Every platform Sonata releases for. |
 | `isWindowsTarget(target)` | Whether programs for `target` need `.exe`. |
-| `installedRuntimePath(target)` | Where the runtime for `target` belongs. `std::nullopt` without a home directory. |
-| `resolveRuntime(target, file)` | Picks the runtime for a build. `target` is `--target` and `file` is `--runtime`; both are optional. Throws `BundleError` saying what to do if there is no usable one. |
+| `installedRuntimePath(target)` | Where the runtime for `target` with every feature belongs. `std::nullopt` without a home directory. |
+| `installedVariantPath(target, features)` | Where the runtime for `target` with exactly `features` belongs. |
+| `variantName(features)` | `"tls+zstd"`, or `"none"`: how stamps and folders name a set of features. |
+| `resolveRuntime(target, file, features)` | Picks the runtime for a build. `target` is `--target` and `file` is `--runtime`, both optional; `features` are the ones the program needs. If the exact runtime isn't installed, it takes a fuller one and says so in `note`. Throws `BundleError` saying what to do if there is no usable one. |
 
 ## Example
 

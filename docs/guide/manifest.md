@@ -92,6 +92,7 @@ each one for a single build.
 | `optimize` | `0`, `1` or `2` | `1` | Luau optimization level. `2` inlines functions and unrolls loops. |
 | `debug` | `0`, `1` or `2` | `1` | Luau debug information. `0` none, `1` line numbers for stack traces, `2` full. |
 | `compress` | `boolean` | `true` | Compress the program packed into the executable. |
+| `without` | `{ string }` | `{}` | Optional features to leave out of the program: `"sodium"`, `"sqlite"`, `"tls"`, `"zstd"`. See [below](#buildwithout). |
 
 #### `build.libraries`
 
@@ -103,8 +104,8 @@ everywhere:
 - `sn build` checks every literal `require("@sonata/...")` in your code against it, and the built
   program refuses the others too.
 
-Every library is always in the executable: this list decides what a program may use, not what it
-contains.
+It also decides which optional features the program needs: one that no listed library uses isn't
+in the built program at all. See [`build.without`](#buildwithout).
 
 Leaving the field out means "every library". Unknown names are an error (with a suggestion if
 it looks like a typo).
@@ -112,6 +113,24 @@ it looks like a typo).
 When dependencies are involved, the allowed set is the union of the root project's list and
 the list of every installed dependency. A dependency without a list pulls in every library,
 and Sonata prints a warning when the root project has a list of its own.
+
+#### `build.without`
+
+The optional features to leave out, whatever the libraries would need: `"sqlite"` (SQLite),
+`"tls"` (Mbed TLS), `"zstd"` and `"sodium"` (libsodium). The program is built from a runtime
+without them, so it carries none of their code, and `sn run` and `sn test` turn them off too, so
+it behaves the same before it's built. Using something left out fails with a message that names
+the feature. [Leaving features out](building.md#leaving-features-out) says what each one is for
+and what it weighs.
+
+```luau
+build = {
+    without = { "sqlite", "tls" },
+},
+```
+
+Unknown names are an error, with a suggestion. Leaving out `"sqlite"` while `build.libraries` lists
+`"sqlite"` is an error too. Only the root project's list counts.
 
 #### `build.assets`
 
@@ -121,7 +140,7 @@ read from disk; `sn build` packs them into the executable. Either way only the l
 visible through [`@sonata/pocket`](../api/module/pocket.md).
 
 A dependency's manifest contributes its own `libraries` and `assets`. The other `build`
-settings are taken from the root project only.
+settings, `without` included, are taken from the root project only.
 
 ## `--!strict` {#strict}
 

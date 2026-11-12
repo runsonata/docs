@@ -99,12 +99,13 @@ executable. See [Building executables](building.md) for the full picture.
 | `--output <file>`, `-o` | Where to write the program (default: `build.output`, or `dist/<name>`). |
 | `--libs <a,b,...>`, `-l` | Built-in libraries the program may use, instead of `build.libraries`. |
 | `--all-libs` | Allow every built-in library. Can't be combined with `--libs`. |
+| `--without <a,b,...>` | Optional features to leave out (`sodium`, `sqlite`, `tls`, `zstd`), instead of `build.without`. See [Leaving features out](building.md#leaving-features-out). |
 | `--optimize <0-2>`, `-O` | Luau optimization level (default `1`). |
 | `--debug-level <0-2>`, `-g` | Luau debug info: `0` none, `1` line numbers (default), `2` full. |
 | `--no-compress` | Don't compress the packed program. `--compress` turns it back on. |
 | `--strict` | Treat the project as `--!strict` for this build. |
 | `--entry <file>`, `-e` | Start at `<file>` instead of the manifest's entrypoint. Must be a `.luau` file inside the project. |
-| `--target <platform>`, `-t` | Build for another platform, like `linux-x64`. Needs [its runtime](building.md#building-for-another-platform) installed. |
+| `--target <platform>`, `-t` | Build for another platform, like `linux-x64`. Needs [its runtimes](building.md#building-for-another-platform) installed. |
 | `--runtime <file>` | Use this `sn` executable as the runtime. |
 | `--install`, `-i` | Fetch missing dependencies first. |
 

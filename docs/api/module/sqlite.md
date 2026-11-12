@@ -1,7 +1,8 @@
 # @sonata/sqlite
 
 SQLite databases, in a file or in memory. SQLite is built into Sonata, so there's nothing to
-install, and a built program carries it with it.
+install, and a built program carries it with it. A program that doesn't use it leaves it out
+(about 1 MiB): see [Leaving features out](../../guide/building.md#leaving-features-out).
 
 ```luau
 local sqlite = require("@sonata/sqlite")

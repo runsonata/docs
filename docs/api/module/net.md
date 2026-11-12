@@ -288,7 +288,10 @@ the same socket get the data in whatever order they happen to run.
 
 ## TLS
 
-TLS uses Mbed TLS, which is built into `sn`, and supports TLS 1.2 and 1.3.
+TLS uses Mbed TLS, which is built into `sn`, and supports TLS 1.2 and 1.3. A program can leave
+it out ([`build.without`](../../guide/building.md#leaving-features-out) `"tls"`): then
+`net.tls.available` is `false`, and every TLS connection, `https` included, fails with an error
+that says TLS isn't in this program. Plain sockets and `http` work the same.
 
 Clients trust the system's root certificates, which are read from the Windows certificate store,
 or from the usual bundle locations on Linux, macOS and Android. If yours are somewhere else, set
@@ -334,8 +337,8 @@ assert(client:startTls({ context = ctx }))
 
 ### net.tls.available / net.tls.library
 
-`net.tls.available` is `true` when TLS is supported, and `net.tls.library` names the TLS library
-(`"Mbed TLS 3.6.7"`).
+`net.tls.available` is `true` when this program has TLS, and `net.tls.library` names the TLS
+library (`"Mbed TLS 3.6.7"`); it's `nil` without TLS.
 
 Mid-stream upgrades (SMTP/IMAP `STARTTLS`) work with `sock:startTls`.
 

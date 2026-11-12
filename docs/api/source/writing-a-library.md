@@ -105,6 +105,28 @@ Add the code under `source/external/` as described in its README, then link it f
 target_link_libraries(sonata_core PRIVATE sonata_hello_dependency)
 ```
 
+## Optional features
+
+If your dependency is large and many programs won't need it, make it an optional feature, so a
+program can leave it out with `build.without` and not carry its code. Put the code that needs it in
+`<file>.with.cpp`, and a stand-in that refuses with `features::missing()` in `<file>.without.cpp`;
+neither goes into `sonata_core`. A library that is the feature as a whole has `<name>.with.cpp`
+and `<name>.without.cpp` instead of `<name>.cpp`, and its `without` side returns a
+`NativeLibrary` with no opener.
+
+```cmake
+# source/libs/hello/library.cmake
+sonata_feature(hello WITH ${CMAKE_CURRENT_SOURCE_DIR}/hello/codec.with.cpp
+                     WITHOUT ${CMAKE_CURRENT_SOURCE_DIR}/hello/codec.without.cpp
+                     LINK sonata_hello_dependency)
+```
+
+Then add it to `Feature` and `all()` in `core/sonata/runtime/features.*` (with the libraries that
+use it) and to `cmake/variant.cpp.in`. Each runtime links one side, and the release builds one
+per combination. Code on the `with` side checks `features::available()`, because `sn run`
+turns a left-out feature off rather than leaving it out. See
+[Optional features](namespaces/runtime.md#optional-features).
+
 ## Reporting through `sn doctor`
 
 A library can report problems only it can notice, such as missing root certificates, by setting

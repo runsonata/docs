@@ -14,6 +14,11 @@ print(compress.decompress(blob):sub(1, 11)) --> "hello hello"
 **Errors:** functions raise on invalid arguments, corrupt data, and output larger than the
 allowed maximum.
 
+**Left out.** A program can be built without zstd or without password protection
+([`build.without`](../../guide/building.md#leaving-features-out) `"zstd"` and `"sodium"`). Then
+`compress.formats()` doesn't list zstd, and using either raises an error that says it isn't in
+this program. Everything else works the same.
+
 **Buffers.** Data can be a string or a `buffer`, and what comes back is the same kind as what
 went in: compressing a buffer gives a buffer, unpacking an archive held in a buffer gives
 entries whose `data` are buffers. Passwords can be either too.
