@@ -11,6 +11,7 @@ in order the first time; afterwards each page works as a reference for its topic
 | [Modules and require](modules.md) | Relative requires, `init.luau`, `@` aliases and built-in libraries. |
 | [Packages](packages.md) | Declaring dependencies, the lock file and `sn pkg`. |
 | [Building executables](building.md) | `sn build`, library selection, assets, runtimes and environment variables. |
+| [Testing](testing.md) | `*.test.luau` files, `@sonata/test` and `sn test`. |
 | [Editor support](editors.md) | `sn init --lsp`: completion and type errors with the Luau Language Server. |
 | [Checking your setup](doctor.md) | `sn doctor`: finding what's wrong with your installation or project. |
 | [Tasks and concurrency](tasks.md) | How the scheduler runs tasks, and what waits without blocking. |

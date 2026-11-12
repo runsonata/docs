@@ -49,6 +49,7 @@ local fs = require("@sonata/fs")
 | [`@sonata/sys`](sys.md) | Facts about the machine, clocks and sleeping. |
 | [`@sonata/task`](task.md) | Tasks and the tools to coordinate them. |
 | [`@sonata/term`](term.md) | Standard streams, colors, cursor control and keyboard input. |
+| [`@sonata/test`](test.md) | Test cases and assertions, run by `sn test`. |
 
 Library tables are read-only. A project can limit which libraries it may use with
 [`build.libraries`](../../guide/manifest.md#buildlibraries).

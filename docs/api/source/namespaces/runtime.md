@@ -35,19 +35,21 @@ What a running program knows about itself. It becomes the [`sonata` global](../.
 
 ```cpp
 void runProgram(luau::ModuleLoader& loader, const ProgramInfo& info,
-                const std::vector<std::string>& args, const Pocket* pocket);
+                const std::vector<std::string>& args, const Pocket* pocket,
+                TestRecorder* tests = nullptr);
 ```
 
 1. Creates the [`VM`](../classes/luau_vm.md), with the `sonata` and `args` globals. `args` (the
    strings given to the program) is a read-only array, also exposed as `process.args`.
 2. Installs `require()` from `loader`, which must already have its aliases and library
    restrictions, and makes `pocket` available to `@sonata/pocket` (it may be `nullptr`, in which
-   case every pocket function raises).
+   case every pocket function raises), and `tests` to `@sonata/test` (see
+   [`TestRecorder`](sonata.md#testrecorder); `nullptr` except under `sn test`).
 3. Sandboxes the globals (`luaL_sandbox`) and runs the entry through
    [`ModuleLoader::run`](../classes/luau_moduleloader.md#run), which keeps the scheduler going
    until nothing is left to do.
 
-`loader` and `pocket` must outlive the call. Throws [`luau::ModuleError`](../classes/luau_moduleloader.md#moduleerror),
+`loader`, `pocket` and `tests` must outlive the call. Throws [`luau::ModuleError`](../classes/luau_moduleloader.md#moduleerror),
 with a stack trace, if the script fails.
 
 ## `runIfBundled`

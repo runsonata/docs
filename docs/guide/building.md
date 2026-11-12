@@ -18,7 +18,7 @@ Building weather 1.2.0 for linux-x64
 2. **Libraries.** The built-in libraries the program may use are worked out from
    `build.libraries` of the project and of every installed dependency.
 3. **Compile.** Every `.luau` file of the project and of each dependency is compiled to
-   bytecode. Every literal `require("@sonata/x")` is checked against the selected libraries.
+   bytecode, except [test files](testing.md) (`*.test.luau`). Every literal `require("@sonata/x")` is checked against the selected libraries.
    All compile errors and unselected libraries are reported together.
 4. **Assets.** The files listed in `build.assets` of every package are collected. They are
    copied into the executable a piece at a time when it's written, so no size limit applies.

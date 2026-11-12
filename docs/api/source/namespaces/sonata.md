@@ -21,6 +21,7 @@ namespace.
 | [`DiskPocket`](../classes/pocket.md#diskpocket) | `runtime/pocket.hpp` | Assets read from disk (`sn run`). |
 | [`BundlePocket`](../classes/pocket.md#bundlepocket) | `runtime/pocket.hpp` | Assets read from a built program's executable. |
 | [`MemoryPocket`](../classes/pocket.md#memorypocket) | `runtime/pocket.hpp` | Assets held in memory (tests). |
+| [`TestRecorder`](#testrecorder) | `runtime/testing.hpp` | Where `@sonata/test` reports each case. |
 | [`InstalledProject`](#installedproject) | `project/selection.hpp` | An installed dependency, opened as a project. |
 | [`LibraryOptions`](#libraryoptions) | `project/selection.hpp` | Overrides for library selection. |
 | [`LibrarySelection`](#libraryselection) | `project/selection.hpp` | The built-in libraries a program may use. |
@@ -145,3 +146,35 @@ for (const auto& warning : selection.warnings)
 if (!selection.all)
     loader.restrictLibraries(selection.libraries, selection.hint);
 ```
+
+## Tests
+
+### `TestRecorder`
+
+```cpp
+struct TestResult {
+    enum class Status { Passed, Failed, Skipped };
+
+    std::string name;     // its groups and its own name, joined with " > "
+    Status status = Status::Passed;
+    std::string message;  // why it failed
+    double seconds = 0;
+};
+
+class TestRecorder {
+public:
+    virtual bool wanted(const std::string& name) const = 0;
+    virtual void record(TestResult result) = 0;
+
+    static void install(lua_State* L, TestRecorder* recorder);
+    static TestRecorder* of(lua_State* L);
+};
+```
+
+`#include <sonata/runtime/testing.hpp>`
+
+[`@sonata/test`](../../module/test.md) runs each case where it's declared and reports it to the
+recorder installed in the VM. `wanted(name)` says whether a case should run at all (`sn test
+--filter`); one that shouldn't isn't recorded. `sn test` installs one recorder per test file,
+through [`runProgram`](runtime.md#runprogram). Without one, the library prints each result
+itself.

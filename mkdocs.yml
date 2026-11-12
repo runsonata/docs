@@ -83,6 +83,7 @@ nav:
         - Modules and require: guide/modules.md
         - Packages: guide/packages.md
         - Building executables: guide/building.md
+        - Testing: guide/testing.md
         - Editor support: guide/editors.md
         - Checking your setup: guide/doctor.md
         - Tasks and concurrency: guide/tasks.md
@@ -110,6 +111,7 @@ nav:
             - "@sonata/sys": api/module/sys.md
             - "@sonata/task": api/module/task.md
             - "@sonata/term": api/module/term.md
+            - "@sonata/test": api/module/test.md
         - Source:
             - api/source/index.md
             - Writing a built-in library: api/source/writing-a-library.md

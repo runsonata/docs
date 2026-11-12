@@ -80,8 +80,16 @@ All return `const std::filesystem::path&` (except the last, `bool`) and are `noe
 std::vector<std::filesystem::path> sourceFiles() const;
 ```
 
-Every `.luau` file in the project. Hidden folders (`.sonata`, `.git`, ...) are skipped, and so is
-anything that can't be read.
+Every `.luau` file in the project, test files included. Hidden folders (`.sonata`, `.git`, ...)
+are skipped, and so is anything that can't be read.
+
+### `isTestFile`
+
+```cpp
+static bool isTestFile(const std::filesystem::path& file);
+```
+
+Whether `file` is named `*.test.luau`: a test file, run by `sn test` and left out by `sn build`.
 
 ## The manifest
 

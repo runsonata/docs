@@ -9,6 +9,7 @@ sn <command> [arguments]
 | [`sn init`](#sn-init) | Create a new Sonata project. |
 | [`sn run`](#sn-run) | Run a project without compiling it. |
 | [`sn build`](#sn-build) | Compile a project into a standalone executable. |
+| [`sn test`](#sn-test) | Run the project's tests. |
 | [`sn doctor`](#sn-doctor) | Find problems with your installation and project. |
 | [`sn libs`](#sn-libs) | List the built-in libraries. |
 | [`sn pkg`](#sn-pkg) | Manage packages: `add`, `remove`, `update`, `status`. |
@@ -74,7 +75,8 @@ script as [`args`](../api/module/globals.md).
 
 Running a project whose declared dependencies aren't installed is an error unless `--install` is
 given. Built-in libraries are restricted to the project's
-[`build.libraries`](manifest.md#buildlibraries), exactly as in a built program.
+[`build.libraries`](manifest.md#buildlibraries), exactly as in a built program. An entry that is
+a [test file](testing.md) may also use `@sonata/test`.
 
 ```sh
 sn run
@@ -113,6 +115,32 @@ sn build
 sn build -o bin/app
 sn build --libs fs,path,term
 sn build -t windows-x64 -O 2 -g 0
+```
+
+## `sn test` {#sn-test}
+
+```
+sn test [path] [options]
+```
+
+Runs every file named `*.test.luau` in the project containing `path` (default `.`), each as a
+program of its own, and reports the cases [`@sonata/test`](../api/module/test.md) ran in them.
+If `path` is a test file or a folder inside the project, only those test files run. See
+[Testing](testing.md).
+
+| Option | Description |
+|---|---|
+| `--filter <text>`, `-f` | Run only the cases whose name contains `<text>`. Can be repeated: a case runs if it matches any. |
+| `--verbose`, `-v` | List every case, not only the failures. |
+| `--install`, `-i` | Fetch missing dependencies first. |
+
+Results go to stdout. The exit status is `1` if a case failed, a file failed outside any case,
+there are no test files, or no case matched `--filter`.
+
+```sh
+sn test
+sn test tests/parser.test.luau
+sn test -f slug
 ```
 
 ## `sn doctor` {#sn-doctor}
