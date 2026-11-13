@@ -40,7 +40,7 @@ type RequestOptions = {
     maxSize: number?,                -- bytes, default 256 MiB
     stream: boolean?,                -- default false
     tls: (TlsOptions | TlsContext)?,
-    proxy: (string | ProxyOptions)?,
+    proxy: (string | ProxyOptions | false)?,  -- default: the environment's
     unix: string?,
     cookies: CookieJar?,
 }
@@ -104,14 +104,22 @@ compression nor undoes it.
 way: requests with their own `tls` options or a `proxy` table get connections of their own. An
 idle connection the server has closed is noticed and replaced, and a GET (or another idempotent
 method) is sent again if a reused connection dies before answering. `keepAlive = false` sends
-`Connection: close` and keeps nothing.
+`Connection: close` and keeps nothing, and `net.closeIdle()` closes every connection kept so far.
 
 **HTTPS** checks the server's certificate against the system's root certificates (see [TLS](#tls)).
 `tls` takes the same options as [`net.connect`](#netconnect), or a [context](#nettlscontext).
 
-**Proxies and Unix sockets.** `proxy` is as for [`net.connect`](#netconnect); an HTTP proxy is
-asked for a tunnel (`CONNECT`), for `http` URLs too. `unix` connects to a Unix domain socket
-instead of the URL's host, which still gives the `Host` header:
+**Proxies.** `proxy` is as for [`net.connect`](#netconnect), or `false` for none. Without it, the
+environment decides, the way curl reads it: `https_proxy` (or `HTTPS_PROXY`) for `https` URLs,
+`http_proxy` for `http` ones, `all_proxy` for either, and `no_proxy` lists what goes direct
+(hosts, domains with their subdomains, addresses, CIDR ranges, or `*`). `HTTP_PROXY` in upper case
+is ignored, as curl does, because CGI servers put a request's `Proxy` header there. This machine
+(`localhost`, loopback addresses) is never reached through the environment's proxy. An HTTP proxy
+is sent `http` requests as they are, naming the whole URL; `https` requests, and anything through
+SOCKS, go through a tunnel.
+
+**Unix sockets.** `unix` connects to a Unix domain socket instead of the URL's host, which still
+gives the `Host` header:
 
 ```luau
 local res = assert(net.request("http://localhost/v1.43/containers/json", { unix = "/var/run/docker.sock" }))
@@ -784,7 +792,7 @@ type WebSocketOptions = {
     cookies: CookieJar?,             -- as for net.request
     timeout: number?,                -- seconds, for connecting and the handshake; default 30
     tls: (TlsOptions | TlsContext)?,
-    proxy: (string | ProxyOptions)?,
+    proxy: (string | ProxyOptions | false)?,  -- as for net.request
     unix: string?,
     maxMessageSize: number?,         -- bytes, default 16 MiB
 }
