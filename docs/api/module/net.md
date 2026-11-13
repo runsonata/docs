@@ -740,6 +740,7 @@ net.ws.connect(url: string, options: WebSocketOptions?): (WebSocket?, string?)
 type WebSocketOptions = {
     headers: Headers?,               -- sent with the handshake
     protocols: { string }?,          -- subprotocols to offer, most wanted first
+    compress: boolean?,              -- offer permessage-deflate; default true
     timeout: number?,                -- seconds, for connecting and the handshake; default 30
     tls: (TlsOptions | TlsContext)?,
     proxy: (string | ProxyOptions)?,
@@ -767,6 +768,7 @@ net.ws.accept(request: ServerRequest, options: AcceptOptions?): (WebSocket?, str
 type AcceptOptions = {
     headers: Headers?,               -- sent with the answer to the handshake
     protocols: { string }?,          -- subprotocols this server speaks, most wanted first
+    compress: boolean?,              -- take permessage-deflate if offered; default true
     maxMessageSize: number?,         -- bytes, default 16 MiB
 }
 ```
@@ -798,6 +800,7 @@ end)
 | Field | Type | Description |
 |---|---|---|
 | `ws.protocol` | `string?` | The subprotocol both sides agreed on. |
+| `ws.compressed` | `boolean` | Whether both sides agreed to compress messages. |
 | `ws:send(message, kind?)` | `true` | Sends a message: text for a string, binary for a buffer, unless `kind` (`"text"` or `"binary"`) says otherwise. `nil, err` once the connection has ended. |
 | `ws:receive(timeout?)` | `(string \| buffer)?, string?` | The next message and its kind: a string for text, a buffer for binary. See below for the end. |
 | `ws:ping(data?)` | `true` | Sends a ping of at most 125 bytes; the other side answers with a pong. |
@@ -813,9 +816,13 @@ any other way. A text message that isn't UTF-8, a message larger than `maxMessag
 other broken rule of the protocol ends the connection, with the close code that says why.
 
 **Tasks.** One task receives at a time. Any number may send, also while another receives: their
-messages take turns, and a timed `receive` never cuts one off. A task that is cancelled in the
-middle of receiving a message leaves the connection unreadable, since nothing then says where the
-next message begins. So give `receive` a `timeout` rather than wrapping it in `task.timeout`.
+messages take turns, and a timed `receive` never cuts one off. Cancelling a task in the middle of
+a message is safe too: a sender's message still goes out whole, and what a receiver had read of
+one is kept for the next `receive`.
+
+**Compression.** Both functions offer, or take, permessage-deflate (RFC 7692) unless `compress` is
+`false`; browsers offer it too. Then messages of 64 bytes or more are sent compressed, and
+`maxMessageSize` limits a message once it is decompressed.
 
 ```luau
 -- Keeps a connection alive while waiting for messages.
