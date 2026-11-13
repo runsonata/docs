@@ -42,6 +42,7 @@ type RequestOptions = {
     tls: (TlsOptions | TlsContext)?,
     proxy: (string | ProxyOptions)?,
     unix: string?,
+    cookies: CookieJar?,
 }
 ```
 
@@ -116,6 +117,10 @@ instead of the URL's host, which still gives the `Host` header:
 local res = assert(net.request("http://localhost/v1.43/containers/json", { unix = "/var/run/docker.sock" }))
 ```
 
+**Cookies** aren't kept unless `cookies` gives a [jar](#netcookiejar): then the request carries
+the jar's cookies for its URL, and what the response sets goes into the jar, from every redirect
+along the way too. A `Cookie` header given in `headers` is sent instead of the jar's.
+
 ### Response
 
 | Field | Type | Description |
@@ -145,6 +150,41 @@ while true do
     fs.appendFile("big.iso", piece)
 end
 ```
+
+### net.cookieJar
+
+```luau
+net.cookieJar(cookies: { StoredCookie }?): CookieJar
+```
+
+A cookie jar, for `net.request`'s and [`net.ws.connect`](#netwsconnect)'s `cookies` option. It
+keeps what servers set with `Set-Cookie`, and gives each request the cookies that belong to it,
+the way browsers do (RFC 6265): by host, with `Domain` for its subdomains too, by path, `Secure`
+ones only over HTTPS, until they expire.
+
+```luau
+local jar = net.cookieJar()
+assert(net.request("https://example.com/login", { method = "POST", form = { user = "me" }, cookies = jar }))
+local res = assert(net.request("https://example.com/account", { cookies = jar }))
+```
+
+| Method | Returns | Description |
+|---|---|---|
+| `jar:get(url)` | `{ StoredCookie }` | The cookies a request to `url` would carry, in the order they'd be sent. |
+| `jar:header(url)` | `string?` | The `Cookie` header a request to `url` would carry. |
+| `jar:set(url, setCookie)` | `true` | Keeps a cookie as if `url` had answered with this `Set-Cookie` value; `nil, why` if it is refused. |
+| `jar:list()` | `{ StoredCookie }` | Every cookie, oldest first. |
+| `jar:clear(domain?)` | | Forgets every cookie, or those for `domain` and its subdomains. |
+
+A `StoredCookie` is `{ name, value, domain, path, hostOnly, secure, httpOnly, sameSite?, expires? }`,
+with `expires` in Unix time; without it, a cookie lasts as long as the jar. To keep cookies from
+one run to the next, save `jar:list()` (with [`@sonata/json`](json.md), say) and give it back to
+`net.cookieJar`.
+
+Cookies are refused when they're for another site, `Secure` but sent over plain HTTP, or break
+the rules of the `__Secure-` and `__Host-` prefixes. A jar has no list of public suffixes, so it
+refuses a `Domain` without a dot (`com`), but can't tell `co.uk` from `example.com`. It keeps at
+most 50 cookies per domain and 3000 in all, forgetting the least recently used first.
 
 ## HTTP server
 
@@ -741,6 +781,7 @@ type WebSocketOptions = {
     headers: Headers?,               -- sent with the handshake
     protocols: { string }?,          -- subprotocols to offer, most wanted first
     compress: boolean?,              -- offer permessage-deflate; default true
+    cookies: CookieJar?,             -- as for net.request
     timeout: number?,                -- seconds, for connecting and the handshake; default 30
     tls: (TlsOptions | TlsContext)?,
     proxy: (string | ProxyOptions)?,
