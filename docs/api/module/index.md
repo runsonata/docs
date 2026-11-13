@@ -38,7 +38,7 @@ local fs = require("@sonata/fs")
 | [`@sonata/fs`](fs.md) | Files, directories, globbing, watching and locking. |
 | [`@sonata/json`](json.md) | Parse, serialize and edit JSON. |
 | [`@sonata/luau`](luau.md) | Compile and run Luau code, in custom environments or isolated VMs with time and memory limits. |
-| [`@sonata/net`](net.md) | An HTTP client, TCP, UDP, Unix sockets, TLS, DNS, IP addresses, URLs, HTTP/1.1 and WebSocket wire formats. |
+| [`@sonata/net`](net.md) | An HTTP client and server, TCP, UDP, Unix sockets, TLS, DNS, IP addresses, URLs, HTTP/1.1 and WebSocket wire formats. |
 | [`@sonata/path`](path.md) | Lexical path manipulation for POSIX and Windows. |
 | [`@sonata/pocket`](pocket.md) | Read-only asset files packed with the program. |
 | [`@sonata/process`](process.md) | The running program, child processes and signals. |

@@ -1,8 +1,7 @@
 # @sonata/net
 
-An HTTP client, and the building blocks under it: sockets, TLS, DNS, IP addresses, URLs, and the
-wire formats of HTTP/1.1 and WebSocket, for writing other protocols (or another HTTP client or
-server) in plain Luau.
+An HTTP client and server, and the building blocks under them: sockets, TLS, DNS, IP addresses,
+URLs, and the wire formats of HTTP/1.1 and WebSocket, for writing other protocols in plain Luau.
 
 ```luau
 local net = require("@sonata/net")
@@ -146,6 +145,194 @@ while true do
     fs.appendFile("big.iso", piece)
 end
 ```
+
+## HTTP server
+
+### net.serve
+
+```luau
+net.serve(options: number | ServeOptions, handler: (ServerRequest) -> (string | buffer | Reply)?): (Server?, string?)
+
+type ServeOptions = {
+    host: string?,                   -- default: every interface
+    port: number?,                   -- 0 picks a free one
+    unix: string?,                   -- a Unix domain socket instead of host and port
+    tls: (TlsOptions | TlsContext)?,
+    timeout: number?,                -- seconds, default 30
+    idleTimeout: number?,            -- seconds, default 75
+    maxBodySize: number?,            -- bytes, default 16 MiB
+    maxHeadSize: number?,            -- bytes, default 64 KiB
+    stream: boolean?,                -- default false
+    maxConnections: number?,         -- default 1000
+    backlog: number?,
+    reusePort: boolean?,
+}
+```
+
+Starts an HTTP/1.1 server and returns it at once: the server runs in tasks of its own, and keeps
+the program running until it is closed. `options` may be just a port. Failing to start (the port
+is taken, the certificate doesn't load, ...) returns `nil, message`.
+
+```luau
+local net = require("@sonata/net")
+
+local server = assert(net.serve(8080, function(req)
+    if req.path == "/" then
+        return "hello"
+    end
+    return { status = 404, body = "nothing at " .. req.path }
+end))
+print("listening on " .. server.url) --> listening on http://127.0.0.1:8080
+```
+
+**Handlers.** Every request is handled in a [task](task.md) of its own, so a handler can wait
+(for a file, another request, a timer) without holding up the others. It returns a string or a
+buffer, sent as `200 OK`, or a [Reply](#reply). A handler that raises an error, or returns
+something that isn't a reply, is reported like any task that fails (to stderr, or to
+`task.onError`), and its client gets `500 Internal Server Error`.
+
+There is no router: compare `req.method` and `req.path`, or keep a table of handlers. Paths and
+queries come as they were sent; [`net.url.decode` and `net.url.parseQuery`](#other-url-functions)
+decode them.
+
+```luau
+local json = require("@sonata/json")
+
+local items = {}
+local routes = {
+    ["GET /items"] = function(req)
+        return { headers = { ["content-type"] = "application/json" }, body = json.encode(items) }
+    end,
+    ["POST /items"] = function(req)
+        table.insert(items, json.decode(req.body))
+        return { status = 201 }
+    end,
+}
+
+net.serve(8080, function(req)
+    local route = routes[req.method .. " " .. req.path]
+    if route == nil then
+        return { status = 404, body = "not found" }
+    end
+    return route(req)
+end)
+```
+
+**What the server takes care of.** Every response gets a `Date` header, and its framing: the
+length of a string body, or chunks for a streamed one (an HTTP/1.0 client gets it until the
+connection closes instead). `HEAD` requests get the headers without the body, and `204` and `304`
+never have one. Connections stay open for more requests unless either side sends
+`Connection: close`, requests sent without waiting for the answer (pipelined) are answered in
+order, and `Expect: 100-continue` is answered when the body is first read. A broken request never
+reaches the handler: it is answered `400`, `408` (too slow), `413` (a body over `maxBodySize`),
+`431` (a head over `maxHeadSize`) or `505`, and its connection is closed.
+
+**Bodies.** The whole request body is read into `req.body` before the handler runs. With
+`stream = true` it is left for `req:read()` instead, piece by piece and without a size limit, and
+the request is a [reader](stream.md#readers-and-writers), so it can be piped to a file. Whatever
+the handler doesn't read is skipped before the next request.
+
+```luau
+local fs = require("@sonata/fs")
+local stream = require("@sonata/stream")
+
+net.serve({ port = 8080, stream = true }, function(req)
+    if req.method ~= "PUT" then
+        return { status = 405 }
+    end
+    stream.pipe(req, fs.open("upload.bin", "w"), { close = true })
+    return { status = 204 }
+end)
+```
+
+A reply's body streams the same way: a function is called for the next piece until it returns
+`nil`, and a reader (an open file, a streamed [`net.request`](#netrequest) response, ...) is read
+to the end and then closed. Both are sent chunked, unless `headers` gives a `Content-Length`.
+
+```luau
+net.serve(8080, function(req)
+    return { headers = { ["content-type"] = "video/mp4" }, body = fs.open("film.mp4") }
+end)
+```
+
+**Timeouts.** `timeout` is how long a client may keep the server waiting at any one point: while
+it sends its request, or takes the response. A kept connection may then wait `idleTimeout` seconds
+for its next request. Neither limits the handler itself: wrap slow work in
+[`task.timeout`](task.md) for that.
+
+**Connections.** At most `maxConnections` are open at once. Later ones wait in the system's queue
+until one closes.
+
+**HTTPS and Unix sockets.** `tls` takes the certificate and key, as for
+[`net.tls.context`](#nettlscontext), or a server context. `unix` listens on a Unix domain socket
+instead of a port; clients reach it with `net.request`'s `unix` option.
+
+```luau
+local server = assert(net.serve({
+    port = 8443,
+    tls = { cert = "/etc/ssl/site.pem", key = "/etc/ssl/site.key" },
+}, handler))
+```
+
+**Switching protocols.** `req:upgrade(headers?)` answers `101 Switching Protocols` and returns the
+connection, which belongs to the handler from then on: the server no longer counts it, times it
+out or closes it. Only a request with an `Upgrade` header can be upgraded; `Connection` and
+`Upgrade` are sent unless `headers` has its own. This is how a WebSocket server starts, before it
+speaks frames with [`net.ws`](#websocket):
+
+```luau
+net.serve(8080, function(req)
+    if (req.headers.upgrade or ""):lower() ~= "websocket" then
+        return { status = 426, headers = { upgrade = "websocket" } }
+    end
+    local socket = assert(req:upgrade({
+        ["Sec-WebSocket-Accept"] = net.ws.acceptKey(req.headers["sec-websocket-key"]),
+    }))
+    -- socket:send(net.ws.encode("text", "hello")) ...
+end)
+```
+
+**Stopping.** `server:close(timeout?)` stops accepting connections and closes the idle ones.
+Requests in progress may finish for up to `timeout` seconds (default 10); then their connections
+are closed too. A handler may close its own server. To stop on Ctrl+C:
+
+```luau
+local process = require("@sonata/process")
+
+process.onSignal("interrupt", function()
+    server:close()
+end)
+```
+
+### ServerRequest
+
+| Field | Type | Description |
+|---|---|---|
+| `method`, `target`, `version` | `string` | `"GET"`, `"/search?q=luau"`, `"1.1"` |
+| `path`, `query` | `string`, `string?` | `"/search"`, `"q=luau"`: not decoded. |
+| `headers` | `{ [string]: string }` | Lower-case names, repeated headers joined by `", "`. |
+| `headerList` | `{ { string } }` | `{ { name, value } }` exactly as received. |
+| `body` | `string` | The whole body. `""` with `stream`. |
+| `remoteAddress`, `remotePort` | `string?`, `number?` | The client's address (an IPv4 client as `"a.b.c.d"`) and port. No port on a Unix socket. |
+| `req:read(max?)` | `string?` | The next piece of the body, `nil` at the end, or `nil, err`. Without `stream`, the whole body once. |
+| `req:upgrade(headers?)` | `Socket?` | The connection, after `101 Switching Protocols` (see [above](#netserve)), or `nil, err`. |
+
+### Reply
+
+| Field | Type | Description |
+|---|---|---|
+| `status` | `number?` | 200 to 999, default `200`. |
+| `reason` | `string?` | Default: the usual one for `status`. |
+| `headers` | `Headers?` | `{ name = value \| { value } }` or `{ { name, value } }`. |
+| `body` | `(string \| buffer \| (() -> string?) \| Reader)?` | Default `""`. A string or buffer is sent with its length; a function or reader is streamed. |
+
+### Server
+
+| Field | Type | Description |
+|---|---|---|
+| `url` | `string` | `"http://127.0.0.1:8080"` (the loopback address when listening on every interface), or `"http://localhost"` on a Unix socket. |
+| `host`, `port` | `string?`, `number?` | What it listens on. `nil` on a Unix socket. |
+| `server:close(timeout?)` | | See [stopping](#netserve). |
 
 ## Sockets
 
