@@ -277,20 +277,8 @@ local server = assert(net.serve({
 **Switching protocols.** `req:upgrade(headers?)` answers `101 Switching Protocols` and returns the
 connection, which belongs to the handler from then on: the server no longer counts it, times it
 out or closes it. Only a request with an `Upgrade` header can be upgraded; `Connection` and
-`Upgrade` are sent unless `headers` has its own. This is how a WebSocket server starts, before it
-speaks frames with [`net.ws`](#websocket):
-
-```luau
-net.serve(8080, function(req)
-    if (req.headers.upgrade or ""):lower() ~= "websocket" then
-        return { status = 426, headers = { upgrade = "websocket" } }
-    end
-    local socket = assert(req:upgrade({
-        ["Sec-WebSocket-Accept"] = net.ws.acceptKey(req.headers["sec-websocket-key"]),
-    }))
-    -- socket:send(net.ws.encode("text", "hello")) ...
-end)
-```
+`Upgrade` are sent unless `headers` has its own. For WebSockets,
+[`net.ws.accept`](#netwsaccept) does all of this.
 
 **Stopping.** `server:close(timeout?)` stops accepting connections and closes the idle ones.
 Requests in progress may finish for up to `timeout` seconds (default 10); then their connections
@@ -452,8 +440,8 @@ write.
 | `sock:joinGroup(group, iface?)`, `sock:leaveGroup(group, iface?)` | | Multicast membership. |
 | `sock:setMulticastInterface(iface)` | | |
 | `sock:shutdown(how?)` | `true` | `"write"` (default), `"read"` or `"both"`. |
-| `sock:setTimeout(seconds?)` | | Timeout for every later wait; `nil` waits forever (the default). |
-| `sock:getTimeout()` | `number?` | |
+| `sock:setTimeout(seconds?, direction?)` | | Timeout for every later wait; `nil` waits forever (the default). Reading and writing have one each, so that a task reading and another writing can wait differently: `direction` (`"read"` or `"write"`) sets one of them, and without it both. |
+| `sock:getTimeout(direction?)` | `number?` | The timeout for `direction`; without one, the read and the write timeout. |
 | `sock:setOption(name, value)`, `sock:getOption(name)` | | See below. |
 | `sock:localAddress()`, `sock:peerAddress()` | `host, port` | |
 | `sock:kind()` | `string` | `"tcp"`, `"udp"`, `"raw"` or `"unix"`. |
@@ -470,8 +458,9 @@ Options for `setOption`/`getOption`:
 `Certificate` is
 `{ subject, issuer, serial, notBefore, notAfter, fingerprint (SHA-256 hex), altNames }`.
 
-One task reading and another writing the same socket at the same time is fine. Two tasks reading
-the same socket get the data in whatever order they happen to run.
+One task reading and another writing the same socket at the same time is fine, and each can have
+its own timeout (`sock:setTimeout(seconds, "read")`). Two tasks reading the same socket get the
+data in whatever order they happen to run.
 
 ## TLS
 
@@ -743,8 +732,110 @@ type Part = { name: string?, value: string, filename: string?, contentType: stri
 
 ## WebSocket
 
-RFC 6455 framing, without I/O: frames go over any socket, plain or TLS. Payloads and frames
-can be strings or buffers; `mask` gives back the kind it was given.
+### net.ws.connect
+
+```luau
+net.ws.connect(url: string, options: WebSocketOptions?): (WebSocket?, string?)
+
+type WebSocketOptions = {
+    headers: Headers?,               -- sent with the handshake
+    protocols: { string }?,          -- subprotocols to offer, most wanted first
+    timeout: number?,                -- seconds, for connecting and the handshake; default 30
+    tls: (TlsOptions | TlsContext)?,
+    proxy: (string | ProxyOptions)?,
+    unix: string?,
+    maxMessageSize: number?,         -- bytes, default 16 MiB
+}
+```
+
+Connects to a WebSocket server at a `ws://` or `wss://` URL. Failing to connect, or a server that
+doesn't agree to switch to WebSocket, returns `nil, message`. `tls`, `proxy` and `unix` are as for
+[`net.request`](#netrequest).
+
+```luau
+local ws = assert(net.ws.connect("wss://example.com/chat"))
+ws:send("hello")
+local message = ws:receive()
+ws:close()
+```
+
+### net.ws.accept
+
+```luau
+net.ws.accept(request: ServerRequest, options: AcceptOptions?): (WebSocket?, string?)
+
+type AcceptOptions = {
+    headers: Headers?,               -- sent with the answer to the handshake
+    protocols: { string }?,          -- subprotocols this server speaks, most wanted first
+    maxMessageSize: number?,         -- bytes, default 16 MiB
+}
+```
+
+Accepts a WebSocket connection in a handler of [`net.serve`](#netserve). From then on the
+connection is the handler's, and the handler returns nothing; it usually goes on receiving
+messages for as long as the connection lasts, in its own task. A request that isn't a WebSocket
+handshake gives `nil, message`, and the handler answers it as it likes. Of the `protocols`, the
+first the client offers is chosen.
+
+```luau
+net.serve(8080, function(req)
+    local ws, err = net.ws.accept(req)
+    if ws == nil then
+        return { status = 400, body = err }
+    end
+    while true do
+        local message = ws:receive()
+        if message == nil then
+            break
+        end
+        ws:send(message) -- an echo
+    end
+end)
+```
+
+### WebSocket
+
+| Field | Type | Description |
+|---|---|---|
+| `ws.protocol` | `string?` | The subprotocol both sides agreed on. |
+| `ws:send(message, kind?)` | `true` | Sends a message: text for a string, binary for a buffer, unless `kind` (`"text"` or `"binary"`) says otherwise. `nil, err` once the connection has ended. |
+| `ws:receive(timeout?)` | `(string \| buffer)?, string?` | The next message and its kind: a string for text, a buffer for binary. See below for the end. |
+| `ws:ping(data?)` | `true` | Sends a ping of at most 125 bytes; the other side answers with a pong. |
+| `ws:close(code?, reason?)` | | Sends a close frame (code 1000 by default), waits up to 5 seconds for the other side's, and closes the connection. A `reason` needs a `code`. |
+| `ws:isClosed()` | `boolean` | Whether closing has begun: nothing more can be sent. |
+
+**Receiving.** `receive` waits for a message for up to `timeout` seconds (default: forever), then
+gives `nil, "timed out"` and the connection stays as it was; once a message has begun to arrive,
+it is read to the end. Messages sent in fragments come out whole, and pings are answered
+meanwhile. Once the connection has ended, `receive` gives `nil, "closed", code?, reason?` after a
+close handshake (`code` and `reason` are what the other side sent), and `nil, message` if it ended
+any other way. A text message that isn't UTF-8, a message larger than `maxMessageSize`, or any
+other broken rule of the protocol ends the connection, with the close code that says why.
+
+**Tasks.** One task receives at a time. Any number may send, also while another receives: their
+messages take turns, and a timed `receive` never cuts one off. A task that is cancelled in the
+middle of receiving a message leaves the connection unreadable, since nothing then says where the
+next message begins. So give `receive` a `timeout` rather than wrapping it in `task.timeout`.
+
+```luau
+-- Keeps a connection alive while waiting for messages.
+while true do
+    local message, why = ws:receive(30)
+    if message ~= nil then
+        print(message)
+    elseif why == "timed out" then
+        ws:ping()
+    else
+        break
+    end
+end
+```
+
+### Framing
+
+The wire format under these connections (RFC 6455), without I/O: frames go over any socket,
+plain or TLS. Payloads and frames can be strings or buffers; `mask` gives back the kind it was
+given.
 
 | Function | Description |
 |---|---|
